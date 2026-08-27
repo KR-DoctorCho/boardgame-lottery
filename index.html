@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>혜주의 생일 보드게임 챌린지 🎁</title>
+  
+  <!-- Canvas Confetti CDN for Celebration Effects -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+  
+  <!-- Google Fonts: Pretendard 대체 & 귀여운 Gaegu & Jua 폰트 -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-cream: #FFFDF9;
+      --pastel-pink: #FFB7C5;
+      --pastel-pink-dark: #FF94A8;
+      --pastel-pink-light: #FFF0F3;
+      --butter-yellow: #FFE89E;
+      --butter-yellow-dark: #F5D061;
+      --butter-yellow-light: #FFF9E6;
+      --text-dark: #4A3E3D;
+      --text-muted: #8E7D7B;
+      --card-bg: #FFFFFF;
+      --shadow-soft: 0 10px 25px -5px rgba(255, 148, 168, 0.2), 0 8px 10px -6px rgba(255, 148, 168, 0.15);
+      --shadow-btn: 0 6px 0px rgba(0, 0, 0, 0.08);
+      --defeat-blue: #CDE4FE;
+      --defeat-blue-dark: #97C4F8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: linear-gradient(135deg, #FFF6F8 0%, #FFFDF5 50%, #F5F9FF 100%);
+      color: var(--text-dark);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 20px 16px 40px;
+      overflow-x: hidden;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+
+    /* 헤더 & 타이틀 */
+    .header-card {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(8px);
+      border-radius: 28px;
+      padding: 22px 18px 18px;
+      text-align: center;
+      border: 3px solid var(--pastel-pink-light);
+      box-shadow: var(--shadow-soft);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .header-deco {
+      position: absolute;
+      top: -10px;
+      right: -10px;
+      font-size: 40px;
+      opacity: 0.2;
+      transform: rotate(15deg);
+      pointer-events: none;
+    }
+
+    .subtitle-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--butter-yellow);
+      color: #7A5B04;
+      font-family: 'Jua', sans-serif;
+      font-size: 13px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 5px rgba(245, 208, 97, 0.4);
+    }
+
+    .title {
+      font-family: 'Jua', sans-serif;
+      font-size: 25px;
+      color: #E85A71;
+      line-height: 1.3;
+      margin-bottom: 6px;
+      text-shadow: 1px 1px 0 #FFF;
+      word-break: keep-all;
+    }
+
+    .subtext {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* 메인 캐릭터 / 아이콘 영역 */
+    .mascot-area {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #FFFFFF;
+      border-radius: 50%;
+      border: 3px solid #FFE4E9;
+      box-shadow: 0 8px 20px rgba(255, 183, 197, 0.35);
+      animation: float 3s ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    .mascot-emoji {
+      font-size: 50px;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .mascot-area:active .mascot-emoji {
+      transform: scale(1.2) rotate(-8deg);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* 남은 뽑기 카운터 */
+    .status-pill {
+      background: #FFF;
+      padding: 8px 18px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 2px solid var(--butter-yellow);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.04);
+    }
+
+    .status-pill strong {
+      color: #E85A71;
+      font-family: 'Jua', sans-serif;
+      font-size: 17px;
+    }
+
+    /* 뽑기 버튼 그룹 */
+    .button-group {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .draw-btn {
+      width: 100%;
+      border: none;
+      border-radius: 24px;
+      padding: 18px 20px;
+      font-family: 'Jua', sans-serif;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.07);
+    }
+
+    .draw-btn:active {
+      transform: translateY(4px);
+    }
+
+    .btn-win {
+      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
+      color: #FFFFFF;
+      border: 3px solid #FFE3EA;
+      box-shadow: 0 8px 20px rgba(255, 148, 168, 0.4);
+    }
+
+    .btn-win:active {
+      box-shadow: 0 3px 10px rgba(255, 148, 168, 0.4);
+    }
+
+    .btn-defeat {
+      background: linear-gradient(135deg, #A2CCFB 0%, #C8E1FF 100%);
+      color: #2C5282;
+      border: 3px solid #E6F0FF;
+      box-shadow: 0 8px 20px rgba(162, 204, 251, 0.4);
+    }
+
+    .btn-defeat:active {
+      box-shadow: 0 3px 10px rgba(162, 204, 251, 0.4);
+    }
+
+    .btn-content {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .btn-icon {
+      font-size: 28px;
+    }
+
+    .btn-text-main {
+      font-size: 21px;
+      line-height: 1.2;
+    }
+
+    .btn-text-sub {
+      font-size: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-weight: 600;
+      opacity: 0.9;
+      margin-top: 2px;
+    }
+
+    .btn-arrow {
+      font-size: 20px;
+      opacity: 0.8;
+      background: rgba(255,255,255,0.3);
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* 하단 선물 목록 & 관리 카드 */
+    .bottom-section {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .accordion-card {
+      width: 100%;
+      background: #FFFFFF;
+      border-radius: 20px;
+      border: 2px solid #F0E6E8;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+      transition: all 0.3s ease;
+    }
+
+    .accordion-header {
+      padding: 14px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 14px;
+      color: #634C4E;
+      background: var(--pastel-pink-light);
+    }
+
+    .accordion-header:hover {
+      background: #FFE8ED;
+    }
+
+    .accordion-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s ease;
+      padding: 0 16px;
+      background: #FFF;
+    }
+
+    .accordion-content.open {
+      max-height: 350px;
+      padding: 14px 16px;
+    }
+
+    .gift-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .gift-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 12px;
+      border-radius: 12px;
+      background: #FFFDF9;
+      border: 1px dashed #E5D5D8;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .gift-item.obtained {
+      background: #F7F7F7;
+      border-color: #DDD;
+      color: #AAA;
+      text-decoration: line-through;
+    }
+
+    .gift-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 700;
+    }
+
+    .gift-badge.available {
+      background: #FFE89E;
+      color: #8C6200;
+    }
+
+    .gift-badge.done {
+      background: #E8E8E8;
+      color: #888888;
+      text-decoration: none !important;
+    }
+
+    /* 리셋 버튼 */
+    .reset-btn {
+      background: transparent;
+      border: none;
+      color: #A89597;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      cursor: pointer;
+      margin: 8px auto 0;
+      padding: 6px 12px;
+      border-radius: 12px;
+      transition: all 0.2s;
+    }
+
+    .reset-btn:hover {
+      background: rgba(0,0,0,0.05);
+      color: #685759;
+    }
+
+    /* 모달 공통 */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(45, 30, 35, 0.6);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      width: 100%;
+      max-width: 360px;
+      background: #FFFFFF;
+      border-radius: 32px;
+      padding: 28px 22px 22px;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+      transform: scale(0.85) translateY(20px);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      border: 4px solid #FFF5F7;
+      position: relative;
+    }
+
+    .modal-overlay.active .modal-box {
+      transform: scale(1) translateY(0);
+    }
+
+    /* 뽑기 진행 애니메이션 (셔플/흔들림 연출) */
+    .roulette-box {
+      font-size: 70px;
+      margin-bottom: 12px;
+      display: inline-block;
+      animation: shakeBox 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes shakeBox {
+      0% { transform: rotate(-10deg) scale(1); }
+      100% { transform: rotate(10deg) scale(1.15); }
+    }
+
+    .modal-tag {
+      display: inline-block;
+      font-family: 'Jua', sans-serif;
+      font-size: 13px;
+      padding: 4px 14px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    .tag-win {
+      background: #FFE4EC;
+      color: #E85A71;
+    }
+
+    .tag-special {
+      background: #FFE89E;
+      color: #8C6200;
+      animation: pulseGlow 1.5s infinite;
+    }
+
+    .tag-defeat {
+      background: #E3EFFF;
+      color: #3182CE;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    .modal-result-title {
+      font-family: 'Jua', sans-serif;
+      font-size: 24px;
+      margin-bottom: 10px;
+      color: var(--text-dark);
+      line-height: 1.3;
+      word-break: keep-all;
+    }
+
+    .modal-result-desc {
+      font-size: 14px;
+      color: #736365;
+      line-height: 1.5;
+      background: #FFFDF9;
+      padding: 12px 14px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      border: 1px solid #F3E8EA;
+      word-break: keep-all;
+    }
+
+    .modal-close-btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 18px;
+      font-family: 'Jua', sans-serif;
+      font-size: 18px;
+      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
+      color: #FFF;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(255, 148, 168, 0.35);
+      transition: all 0.15s;
+    }
+
+    .modal-close-btn:active {
+      transform: translateY(2px);
+    }
+
+    /* 리셋 확인 모달 버튼들 */
+    .confirm-btn-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .btn-cancel {
+      flex: 1;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid #DDD;
+      background: #F8F8F8;
+      color: #666;
+      font-family: 'Jua', sans-serif;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .btn-reset-confirm {
+      flex: 1;
+      padding: 12px;
+      border-radius: 14px;
+      border: none;
+      background: #FF6B6B;
+      color: #FFF;
+      font-family: 'Jua', sans-serif;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    /* 토스트 알림 */
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(50, 40, 42, 0.9);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 25px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+      transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      z-index: 2000;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- 헤더 영역 -->
+    <header class="header-card">
+      <div class="header-deco">🎲</div>
+      <div class="subtitle-badge">✨ ONLY FOR HYEJU ✨</div>
+      <h1 class="title">혜주의 생일<br>보드게임 챌린지 🎁</h1>
+      <p class="subtext">보드게임에서 승리하고 선물을 획득해보세요! 🎁<br>두근두근 오늘의 행운의 주인공은 누구? 💖</p>
+    </header>
+
+    <!-- 중앙 귀여운 마스코트 & 남은 선물 개수 -->
+    <div class="mascot-area" id="mascotArea" onclick="celebrateClick()">
+      <div class="mascot-emoji" id="mascotEmoji">🎁</div>
+    </div>
+
+    <div class="status-pill">
+      <span>남은 승리 선물</span>
+      <strong id="remainCountText">4개 / 4개</strong>
+    </div>
+
+    <!-- 메인 뽑기 버튼 2종 -->
+    <main class="button-group">
+      <!-- 승리 뽑기 -->
+      <button class="draw-btn btn-win" onclick="handleDraw('win')">
+        <div class="btn-content">
+          <div class="btn-icon">🏆</div>
+          <div class="btn-text-main">승리 뽑기</div>
+        </div>
+        <div class="btn-arrow">➜</div>
+      </button>
+
+      <!-- 패배 뽑기 -->
+      <button class="draw-btn btn-defeat" onclick="handleDraw('defeat')">
+        <div class="btn-content">
+          <div class="btn-icon">🥺</div>
+          <div class="btn-text-main">패배 뽑기</div>
+        </div>
+        <div class="btn-arrow">➜</div>
+      </button>
+    </main>
+
+    <!-- 하단 선물 리스트 & 초기화 -->
+    <footer class="bottom-section">
+      <div class="accordion-card">
+        <div class="accordion-header" onclick="toggleGiftList()">
+          <span>🎁 남은 승리 선물 목록 보기</span>
+          <span id="accordionArrow">▼</span>
+        </div>
+        <div class="accordion-content" id="giftListContent">
+          <ul class="gift-list" id="giftListElement">
+            <!-- JS 렌더링 -->
+          </ul>
+        </div>
+      </div>
+
+      <button class="reset-btn" onclick="openResetModal()">
+        <span>🔄 뽑기 기록 및 풀 초기화</span>
+      </button>
+    </footer>
+
+  </div>
+
+  <!-- 결과 모달 -->
+  <div class="modal-overlay" id="resultModal" onclick="closeResultModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="roulette-box" id="modalEmoji">🎁</div>
+      <div>
+        <span class="modal-tag" id="modalTag">🎉 승리 획득!</span>
+      </div>
+      <h2 class="modal-result-title" id="modalTitle">스페셜 기프트 A</h2>
+      <p class="modal-result-desc" id="modalDesc">써지컬 목걸이를 획득하셨습니다!</p>
+      <button class="modal-close-btn" onclick="closeResultModal()">신난다! 확인 💖</button>
+    </div>
+  </div>
+
+  <!-- 리셋 확인 모달 -->
+  <div class="modal-overlay" id="resetModal" onclick="closeResetModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div style="font-size: 48px; margin-bottom: 10px;">⚠️</div>
+      <h2 class="modal-result-title">게임을 초기화할까요?</h2>
+      <p class="modal-result-desc">모든 승리 선물 목록이 다시 4개로 복구되고 처음 상태로 돌아갑니다.</p>
+      <div class="confirm-btn-group">
+        <button class="btn-cancel" onclick="closeResetModal()">취소</button>
+        <button class="btn-reset-confirm" onclick="resetGame()">초기화하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 토스트 알림 -->
+  <div class="toast" id="toastMessage">알림 내용</div>
+
+  <script>
+    // -----------------------------------------------------------------
+    // 1. 초기 데이터 정의 (총 4개 선물)
+    // -----------------------------------------------------------------
+    const INITIAL_WIN_POOL = [
+      { id: 1, name: "💎 스페셜 기프트 A", detail: "영롱하고 변색없는 '써지컬 목걸이' 당첨!", isSpecial: true },
+      { id: 2, name: "💎 스페셜 기프트 B", detail: "반짝반짝 빛나는 '써지컬 귀걸이' 당첨!", isSpecial: true },
+      { id: 3, name: "🍭 달콤한 츄파춥스 사탕", detail: "당 충전 완료! 달콤한 막대사탕 획득!", isSpecial: false },
+      { id: 4, name: "🧁 맛있는 널담 휘낭시에", detail: "쫀득하고 고소한 프리미엄 휘낭시에 디저트 획득!", isSpecial: false }
+    ];
+
+    const DEFEAT_POOL = [
+      {
+        title: "💕 애교 3초 부리기!",
+        desc: "사랑스러운 애교 3초를 부리면 '승리 시 뽑기권' 1회를 즉시 획득합니다!",
+        isBonus: true,
+        emoji: "🥰"
+      },
+      {
+        title: "꽝! 😜",
+        desc: "아쉽지만 다음 판 승리를 노려보세요! 파이팅!",
+        isBonus: false,
+        emoji: "💨"
+      },
+      {
+        title: "꽝! 👑",
+        desc: "남자친구의 당당한 승리 만세! (다음 판엔 꼭 이겨봐요!)",
+        isBonus: false,
+        emoji: "🤴"
+      },
+      {
+        title: "꽝! 💨",
+        desc: "아쉽지만 다음 기회에! 운을 아껴둔 거예요!",
+        isBonus: false,
+        emoji: "🍃"
+      },
+      {
+        title: "꽝! 🍀",
+        desc: "운이 살짝 빗나갔습니다! 행운의 네잎클로버 충전 중...",
+        isBonus: false,
+        emoji: "🌱"
+      }
+    ];
+
+    // LocalStorage 키 (V2: 4개 풀 지원)
+    const STORAGE_KEY = 'HYEJU_BIRTHDAY_GAME_STATE_V2';
+
+    // 앱 상태
+    let remainingWinPool = [];
+    let isDrawing = false;
+
+    // -----------------------------------------------------------------
+    // 2. 초기화 및 로컬스토리지 복원
+    // -----------------------------------------------------------------
+    function initApp() {
+      const savedData = localStorage.getItem(STORAGE_KEY);
+      if (savedData) {
+        try {
+          remainingWinPool = JSON.parse(savedData);
+        } catch (e) {
+          remainingWinPool = [...INITIAL_WIN_POOL];
+        }
+      } else {
+        remainingWinPool = [...INITIAL_WIN_POOL];
+      }
+      saveState();
+      renderUI();
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remainingWinPool));
+      } catch (e) {
+        console.warn('LocalStorage save failed:', e);
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // 3. UI 렌더링
+    // -----------------------------------------------------------------
+    function renderUI() {
+      // 카운터 업데이트
+      const countEl = document.getElementById('remainCountText');
+      countEl.textContent = `${remainingWinPool.length}개 / ${INITIAL_WIN_POOL.length}개`;
+
+      // 남은 선물 목록 렌더링 (블라인드 시크릿 선물로 표시)
+      const listEl = document.getElementById('giftListElement');
+      listEl.innerHTML = '';
+
+      INITIAL_WIN_POOL.forEach((item, index) => {
+        const isRemaining = remainingWinPool.some(r => r.id === item.id);
+        const li = document.createElement('li');
+        li.className = `gift-item ${isRemaining ? '' : 'obtained'}`;
+        
+        li.innerHTML = `
+          <span style="font-weight: 600;">🎁 선물 ${index + 1}</span>
+          <span class="gift-badge ${isRemaining ? 'available' : 'done'}">
+            ${isRemaining ? '뽑기 가능' : '획득 완료'}
+          </span>
+        `;
+        listEl.appendChild(li);
+      });
+    }
+
+    // -----------------------------------------------------------------
+    // 4. 오디오 합성 효과음 (Web Audio API - 파일 없이 작동)
+    // -----------------------------------------------------------------
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function playSound(type) {
+      try {
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const now = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'tick') {
+          // 통통 튀는 틱 소리
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(440, now);
+          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.start(now);
+          osc.stop(now + 0.08);
+        } else if (type === 'fanfare') {
+          // 팡파레 멜로디 (승리/스페셜)
+          const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, High C
+          notes.forEach((freq, idx) => {
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.type = 'triangle';
+            o.frequency.setValueAtTime(freq, now + idx * 0.1);
+            g.gain.setValueAtTime(0.25, now + idx * 0.1);
+            g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.25);
+            o.start(now + idx * 0.1);
+            o.stop(now + idx * 0.1 + 0.3);
+          });
+        } else if (type === 'sad') {
+          // 아쉬운 저음
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(250, now);
+          osc.frequency.linearRampToValueAtTime(150, now + 0.3);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+        }
+      } catch (e) {
+        // AudioContext 차단 환경에서는 무음 처리
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // 5. 뽑기 인터랙션 및 로직
+    // -----------------------------------------------------------------
+    function handleDraw(type) {
+      if (isDrawing) return;
+
+      if (type === 'win') {
+        if (remainingWinPool.length === 0) {
+          showToast("🎉 모든 승리 선물이 소진되었습니다! 하단에서 초기화할 수 있어요.");
+          return;
+        }
+
+        isDrawing = true;
+        animateAndShowResult('win');
+      } else {
+        isDrawing = true;
+        animateAndShowResult('defeat');
+      }
+    }
+
+    function animateAndShowResult(type) {
+      const mascot = document.getElementById('mascotEmoji');
+      mascot.textContent = '✨';
+      
+      // 틱틱 효과음 & 애니메이션
+      let tickCount = 0;
+      const interval = setInterval(() => {
+        playSound('tick');
+        const emojis = ['🎁', '💎', '👑', '🍭', '🧁', '💖', '⭐'];
+        mascot.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        tickCount++;
+        if (tickCount >= 6) {
+          clearInterval(interval);
+          finishDraw(type);
+        }
+      }, 100);
+    }
+
+    function finishDraw(type) {
+      isDrawing = false;
+      document.getElementById('mascotEmoji').textContent = '🎁';
+
+      const modal = document.getElementById('resultModal');
+      const tag = document.getElementById('modalTag');
+      const title = document.getElementById('modalTitle');
+      const desc = document.getElementById('modalDesc');
+      const emoji = document.getElementById('modalEmoji');
+
+      if (type === 'win') {
+        // 비복원 추출 (중복 제거)
+        const randomIndex = Math.floor(Math.random() * remainingWinPool.length);
+        const selectedGift = remainingWinPool.splice(randomIndex, 1)[0];
+        saveState();
+        renderUI();
+
+        if (selectedGift.isSpecial) {
+          tag.className = 'modal-tag tag-special';
+          tag.textContent = '👑 스페셜 대박 선물 당첨!';
+          emoji.textContent = '💎';
+          fireConfettiBurst();
+        } else {
+          tag.className = 'modal-tag tag-win';
+          tag.textContent = '🎉 승리 선물 획득!';
+          emoji.textContent = selectedGift.id === 3 ? '🍭' : '🧁';
+          fireSimpleConfetti();
+        }
+
+        title.textContent = selectedGift.name;
+        desc.textContent = selectedGift.detail;
+        playSound('fanfare');
+
+      } else {
+        // 패배 뽑기 (무작위 복원 추출)
+        const randomIndex = Math.floor(Math.random() * DEFEAT_POOL.length);
+        const result = DEFEAT_POOL[randomIndex];
+
+        tag.className = 'modal-tag tag-defeat';
+        tag.textContent = result.isBonus ? '💖 특별 만회 찬스!' : '🥺 다음 기회에...';
+        emoji.textContent = result.emoji;
+        title.textContent = result.title;
+        desc.textContent = result.desc;
+
+        if (result.isBonus) {
+          fireSimpleConfetti();
+          playSound('fanfare');
+        } else {
+          playSound('sad');
+        }
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeResultModal() {
+      document.getElementById('resultModal').classList.remove('active');
+    }
+
+    // -----------------------------------------------------------------
+    // 6. 축하 컨페티 효과 (Confetti)
+    // -----------------------------------------------------------------
+    function fireConfettiBurst() {
+      if (typeof confetti !== 'function') return;
+
+      const duration = 2.5 * 1000;
+      const end = Date.now() + duration;
+
+      (function frame() {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#FFB7C5', '#FFE89E', '#FF6B8B', '#A2CCFB', '#FFF']
+        });
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#FFB7C5', '#FFE89E', '#FF6B8B', '#A2CCFB', '#FFF']
+        });
+
+        if (Date.now() < end) {
+          requestAnimationFrame(frame);
+        }
+      }());
+    }
+
+    function fireSimpleConfetti() {
+      if (typeof confetti !== 'function') return;
+      confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.65 },
+        colors: ['#FFB7C5', '#FFE89E', '#FF94A8', '#FFF']
+      });
+    }
+
+    function celebrateClick() {
+      playSound('tick');
+      fireSimpleConfetti();
+      showToast("🎁 생일 축하해요! 보드게임 재미있게 하세요 💖");
+    }
+
+    // -----------------------------------------------------------------
+    // 7. 아코디언 & 리셋 & 토스트 기능
+    // -----------------------------------------------------------------
+    function toggleGiftList() {
+      const content = document.getElementById('giftListContent');
+      const arrow = document.getElementById('accordionArrow');
+      content.classList.toggle('open');
+      arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+    }
+
+    function openResetModal() {
+      document.getElementById('resetModal').classList.add('active');
+    }
+
+    function closeResetModal() {
+      document.getElementById('resetModal').classList.remove('active');
+    }
+
+    function resetGame() {
+      remainingWinPool = [...INITIAL_WIN_POOL];
+      saveState();
+      renderUI();
+      closeResetModal();
+      showToast("🔄 모든 뽑기 목록이 4개로 초기화되었습니다!");
+      playSound('fanfare');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toastMessage');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2400);
+    }
+
+    // 초기 실행
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
