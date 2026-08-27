@@ -963,8 +963,8 @@
 
     <!-- 하단 선물 리스트 & 축하 메시지 카드 & 초기화 -->
     <footer class="bottom-section">
-      <!-- 게임 종료 후 생일 축하 메시지 카드 열기 버튼 -->
-      <button class="celebrate-card-btn" onclick="openBirthdayMessageModal()">
+      <!-- 게임 종료 후 생일 축하 메시지 카드 열기 버튼 (이중 컨펌 플로우) -->
+      <button class="celebrate-card-btn" onclick="startBirthdayMessageFlow()">
         <span class="celebrate-btn-icon">💌</span>
         <div class="celebrate-btn-text">
           <div class="celebrate-main-text">게임이 끝나셨나요? ✨</div>
@@ -992,7 +992,33 @@
 
   </div>
 
-  <!-- 생일 축하 메시지 카드 모달 -->
+  <!-- 1단계 컨펌 모달 (정말 게임이 끝나셨나요?) -->
+  <div class="modal-overlay" id="confirmModal1" onclick="closeConfirmModal1()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div style="font-size: 48px; margin-bottom: 8px;">🎲</div>
+      <h2 class="modal-result-title" style="font-size: 22px;">정말 게임이 끝나셨나요?</h2>
+      <p class="modal-result-desc" style="line-height: 1.5; font-size: 14px;">모든 보드게임 승부와 뽑기가 다 끝났을 때 열어보셔야 가장 재미있어요! 💖</p>
+      <div class="confirm-btn-group" style="margin-top: 18px;">
+        <button class="btn-cancel" onclick="closeConfirmModal1()" style="flex: 1;">아직 하는 중!</button>
+        <button class="modal-close-btn btn-win-style" onclick="goToConfirmStep2()" style="flex: 1.3; padding: 12px 10px; font-size: 15px;">네! 다 끝났어요 ➜</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2단계 컨펌 모달 (보드게임 정말 재미있게 하셨나용?) -->
+  <div class="modal-overlay" id="confirmModal2" onclick="closeConfirmModal2()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div style="font-size: 48px; margin-bottom: 8px;">🥰</div>
+      <h2 class="modal-result-title" style="font-size: 22px;">보드게임 정말 재미있게 하셨나용? 🎲</h2>
+      <p class="modal-result-desc" style="line-height: 1.5; font-size: 14px;">혜주의 소중한 생일을 위해 용호가 준비한 마지막 비밀 메시지가 기다리고 있어요! ✨</p>
+      <div class="confirm-btn-group" style="margin-top: 18px;">
+        <button class="btn-cancel" onclick="closeConfirmModal2()" style="flex: 1;">잠시만요!</button>
+        <button class="modal-close-btn btn-win-style" onclick="revealFinalBirthdayLetter()" style="flex: 1.5; padding: 12px 8px; font-size: 15px;">완전 꿀잼! 열어보기 💖</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 최종 생일 축하 메시지 카드 모달 -->
   <div class="modal-overlay" id="birthdayMessageModal" onclick="closeBirthdayMessageModal()">
     <div class="modal-box message-card-box" onclick="event.stopPropagation()">
       <div class="message-cake-icon">🎂</div>
@@ -1647,20 +1673,45 @@
     }
 
     // -----------------------------------------------------------------
-    // 5-2. 생일 축하 메시지 카드 모달 제어
+    // 5-2. 생일 축하 메시지 카드 이중 컨펌 및 모달 제어
     // -----------------------------------------------------------------
-    function openBirthdayMessageModal() {
-      const modal = document.getElementById('birthdayMessageModal');
-      modal.classList.add('active');
-      
-      // 화려한 2방향 컨페티 폭죽 & 팡파레 사운드
-      fireConfettiBurst();
-      playSound('fanfare');
+    function startBirthdayMessageFlow() {
+      // 1단계 컨펌 모달 열기
+      document.getElementById('confirmModal1').classList.add('active');
+      playSound('tick');
+    }
 
-      // BGM이 꺼져있다면 감동을 위해 자동으로 오르골 재생 ON!
-      if (!isBgmPlaying) {
-        startBGM();
-      }
+    function closeConfirmModal1() {
+      document.getElementById('confirmModal1').classList.remove('active');
+    }
+
+    function goToConfirmStep2() {
+      closeConfirmModal1();
+      setTimeout(() => {
+        // 2단계 컨펌 모달 열기
+        document.getElementById('confirmModal2').classList.add('active');
+        playSound('tick');
+      }, 150);
+    }
+
+    function closeConfirmModal2() {
+      document.getElementById('confirmModal2').classList.remove('active');
+    }
+
+    function revealFinalBirthdayLetter() {
+      closeConfirmModal2();
+      setTimeout(() => {
+        // 최종 편지 모달 오픈 & 화려한 폭죽 + 오르골 BGM
+        const modal = document.getElementById('birthdayMessageModal');
+        modal.classList.add('active');
+        
+        fireConfettiBurst();
+        playSound('fanfare');
+
+        if (!isBgmPlaying) {
+          startBGM();
+        }
+      }, 150);
     }
 
     function closeBirthdayMessageModal() {
