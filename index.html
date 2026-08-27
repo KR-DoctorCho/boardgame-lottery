@@ -676,6 +676,51 @@
       transform: rotateY(180deg);
     }
 
+    .turn-side-selector {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 4px;
+      margin-bottom: 12px;
+      background: #FFF5F7;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid #FFE4E9;
+    }
+
+    .selector-label {
+      font-size: 13px;
+      font-weight: 600;
+      color: #8C6A6E;
+    }
+
+    .selector-btn-group {
+      display: flex;
+      background: #FFFFFF;
+      border-radius: 16px;
+      padding: 2px;
+      border: 1px solid #F0D5DA;
+    }
+
+    .selector-pill {
+      border: none;
+      background: transparent;
+      padding: 4px 12px;
+      border-radius: 14px;
+      font-family: 'Jua', sans-serif;
+      font-size: 13px;
+      color: #9E8588;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .selector-pill.active {
+      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
+      color: #FFFFFF;
+      box-shadow: 0 2px 6px rgba(255, 148, 168, 0.3);
+    }
+
     .turn-hint {
       font-size: 13px;
       color: #9A8789;
@@ -808,17 +853,26 @@
     <div class="modal-box" onclick="event.stopPropagation()">
       <h2 class="modal-result-title">🪙 선공 동전 던지기</h2>
       
+      <!-- 앞면 뒷면 선택기 -->
+      <div class="turn-side-selector">
+        <span class="selector-label">앞면(👑) 담당:</span>
+        <div class="selector-btn-group">
+          <button class="selector-pill active" id="btnSelectHyeju" onclick="setFrontPlayer('hyeju')">혜주</button>
+          <button class="selector-pill" id="btnSelectYongho" onclick="setFrontPlayer('yongho')">용호</button>
+        </div>
+      </div>
+
       <!-- 동전 던지기 영역 -->
-      <div style="margin: 18px 0;">
+      <div style="margin: 14px 0;">
         <div class="coin-container" onclick="flipCoin()">
           <div class="coin-inner" id="coinInner">
-            <div class="coin-side coin-front">
-              <span>👑</span>
-              <span style="font-size:16px; margin-top:2px;">혜주</span>
+            <div class="coin-side coin-front" id="coinFrontSide">
+              <span id="coinFrontEmoji">👑</span>
+              <span id="coinFrontName" style="font-size:16px; margin-top:2px;">혜주</span>
             </div>
-            <div class="coin-side coin-back">
-              <span>🤴</span>
-              <span style="font-size:16px; margin-top:2px;">용호</span>
+            <div class="coin-side coin-back" id="coinBackSide">
+              <span id="coinBackEmoji">🤴</span>
+              <span id="coinBackName" style="font-size:16px; margin-top:2px;">용호</span>
             </div>
           </div>
         </div>
@@ -1168,6 +1222,7 @@
     // -----------------------------------------------------------------
     let isFlipping = false;
     let coinTotalRotation = 0;
+    let frontPlayer = 'hyeju'; // 'hyeju' (앞면: 혜주, 뒷면: 용호) or 'yongho' (앞면: 용호, 뒷면: 혜주)
 
     function openTurnModal() {
       const modal = document.getElementById('turnModal');
@@ -1192,6 +1247,39 @@
       document.getElementById('turnModal').classList.remove('active');
     }
 
+    function setFrontPlayer(player) {
+      if (isFlipping) return;
+      frontPlayer = player;
+
+      const btnHyeju = document.getElementById('btnSelectHyeju');
+      const btnYongho = document.getElementById('btnSelectYongho');
+      const frontName = document.getElementById('coinFrontName');
+      const backName = document.getElementById('coinBackName');
+      const frontEmoji = document.getElementById('coinFrontEmoji');
+      const backEmoji = document.getElementById('coinBackEmoji');
+      const resultBox = document.getElementById('turnResultBox');
+
+      resultBox.style.display = 'none';
+
+      if (player === 'hyeju') {
+        btnHyeju.classList.add('active');
+        btnYongho.classList.remove('active');
+        frontEmoji.textContent = '👑';
+        frontName.textContent = '혜주';
+        backEmoji.textContent = '🤴';
+        backName.textContent = '용호';
+      } else {
+        btnHyeju.classList.remove('active');
+        btnYongho.classList.add('active');
+        frontEmoji.textContent = '🤴';
+        frontName.textContent = '용호';
+        backEmoji.textContent = '👑';
+        backName.textContent = '혜주';
+      }
+
+      playSound('tick');
+    }
+
     function flipCoin() {
       if (isFlipping) return;
       isFlipping = true;
@@ -1205,12 +1293,12 @@
       resultBox.style.display = 'none';
       playSound('tick');
 
-      // 0: 혜주(앞면 0도), 1: 용호(뒷면 180도)
-      const isHyeju = Math.random() < 0.5;
+      // 0: 앞면 (0도), 1: 뒷면 (180도)
+      const isFront = Math.random() < 0.5;
 
       // 최소 5바퀴(1800도) 회전 누적하여 다시 던져도 계속 자연스럽게 회전
       const spin = 1800;
-      const targetRemainder = isHyeju ? 0 : 180;
+      const targetRemainder = isFront ? 0 : 180;
       const currentRemainder = coinTotalRotation % 360;
       
       let diff = targetRemainder - currentRemainder;
@@ -1233,17 +1321,24 @@
         isFlipping = false;
         resultBox.style.display = 'block';
 
-        if (isHyeju) {
-          resultTag.className = 'modal-tag tag-special';
-          resultTag.textContent = '✨ 선공 결정!';
-          resultText.textContent = '👑 혜주 선공! (앞면)';
-          resultText.style.color = '#E85A71';
+        // 당첨자 계산 (앞면 선택 상태에 따라 분기)
+        let winnerName, winnerEmoji, isWinnerHyeju;
+        if (isFront) {
+          winnerName = frontPlayer === 'hyeju' ? '혜주' : '용호';
+          winnerEmoji = frontPlayer === 'hyeju' ? '👑' : '🤴';
+          isWinnerHyeju = frontPlayer === 'hyeju';
         } else {
-          resultTag.className = 'modal-tag tag-defeat';
-          resultTag.textContent = '✨ 선공 결정!';
-          resultText.textContent = '🤴 용호 선공! (뒷면)';
-          resultText.style.color = '#2C5282';
+          winnerName = frontPlayer === 'hyeju' ? '용호' : '혜주';
+          winnerEmoji = frontPlayer === 'hyeju' ? '🤴' : '👑';
+          isWinnerHyeju = frontPlayer !== 'hyeju';
         }
+
+        const sideText = isFront ? '앞면' : '뒷면';
+
+        resultTag.className = isWinnerHyeju ? 'modal-tag tag-special' : 'modal-tag tag-defeat';
+        resultTag.textContent = `✨ ${sideText} 당첨!`;
+        resultText.textContent = `${winnerEmoji} ${winnerName} 선공! (${sideText})`;
+        resultText.style.color = isWinnerHyeju ? '#E85A71' : '#2C5282';
 
         actionBtn.textContent = '다시 던지기 🪙';
         fireSimpleConfetti();
