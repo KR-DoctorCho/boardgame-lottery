@@ -535,6 +535,194 @@
       cursor: pointer;
     }
 
+    /* BGM 플로팅 토글 버튼 */
+    .bgm-toggle-btn {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 900;
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid var(--pastel-pink);
+      border-radius: 30px;
+      padding: 6px 12px;
+      font-family: 'Jua', sans-serif;
+      font-size: 13px;
+      color: #E85A71;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 4px 12px rgba(255, 148, 168, 0.25);
+      cursor: pointer;
+      backdrop-filter: blur(4px);
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .bgm-toggle-btn:active {
+      transform: scale(0.95);
+    }
+
+    .bgm-toggle-btn.playing {
+      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
+      color: #FFFFFF;
+      border-color: #FFF;
+      animation: pulseBgm 1.5s infinite;
+    }
+
+    @keyframes pulseBgm {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    /* 선공 정하기 미니 툴 카드 */
+    .mini-tools-card {
+      width: 100%;
+      background: #FFFFFF;
+      border-radius: 20px;
+      padding: 14px 16px;
+      border: 2px solid #FFEBEF;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    .tools-title {
+      font-family: 'Jua', sans-serif;
+      font-size: 14px;
+      color: #8C6A6E;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tools-btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .tool-btn {
+      flex: 1;
+      background: var(--butter-yellow-light);
+      border: 2px solid var(--butter-yellow);
+      border-radius: 16px;
+      padding: 10px 8px;
+      font-family: 'Jua', sans-serif;
+      font-size: 14px;
+      color: #7A5B04;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s;
+    }
+
+    .tool-btn:active {
+      transform: translateY(2px);
+      background: var(--butter-yellow);
+    }
+
+    .tool-icon {
+      font-size: 18px;
+    }
+
+    /* 동전 3D 애니메이션 */
+    .coin-container {
+      width: 110px;
+      height: 110px;
+      margin: 0 auto 12px;
+      position: relative;
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .coin-inner {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      transform-style: preserve-3d;
+      transition: transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .coin-side {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      backface-visibility: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Jua', sans-serif;
+      font-size: 34px;
+      border: 4px solid #FFF;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .coin-front {
+      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
+      color: #FFF;
+      transform: rotateY(0deg);
+    }
+
+    .coin-back {
+      background: linear-gradient(135deg, #97C4F8 0%, #CDE4FE 100%);
+      color: #1A4476;
+      transform: rotateY(180deg);
+    }
+
+    /* 주사위 애니메이션 */
+    .dice-container {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      margin: 0 auto 12px;
+      cursor: pointer;
+    }
+
+    .dice-cube {
+      width: 75px;
+      height: 75px;
+      background: #FFFFFF;
+      border: 3px solid #FFE0E6;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 44px;
+      box-shadow: 0 6px 15px rgba(255, 148, 168, 0.25);
+      transition: transform 0.2s;
+    }
+
+    .dice-cube.rolling {
+      animation: diceShake 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes diceShake {
+      0% { transform: rotate(-15deg) scale(1); }
+      100% { transform: rotate(15deg) scale(1.15); }
+    }
+
+    .turn-hint {
+      font-size: 13px;
+      color: #9A8789;
+      margin-top: 6px;
+    }
+
+    .turn-result-box {
+      background: #FFFDF9;
+      border: 2px dashed #FFCCD5;
+      border-radius: 18px;
+      padding: 12px 14px;
+      margin: 14px 0 6px;
+    }
+
+    .turn-result-text {
+      font-family: 'Jua', sans-serif;
+      font-size: 22px;
+      color: #E85A71;
+      margin-top: 4px;
+    }
+
     /* 토스트 알림 */
     .toast {
       position: fixed;
@@ -561,6 +749,12 @@
 </head>
 <body>
 
+  <!-- 플로팅 BGM 버튼 -->
+  <button class="bgm-toggle-btn" id="bgmBtn" onclick="toggleBGM()" title="생일 축하 오르골 BGM 토글">
+    <span id="bgmIcon">🎵</span>
+    <span id="bgmLabel">BGM OFF</span>
+  </button>
+
   <div class="app-container">
     
     <!-- 헤더 영역 -->
@@ -580,6 +774,21 @@
       <span>남은 승리 선물</span>
       <strong id="remainCountText">4개 / 4개</strong>
     </div>
+
+    <!-- 선공 정하기 미니 도구 바 -->
+    <section class="mini-tools-card">
+      <div class="tools-title">🎲 보드게임 시작 도구</div>
+      <div class="tools-btn-group">
+        <button class="tool-btn" onclick="openTurnModal('coin')">
+          <span class="tool-icon">🪙</span>
+          <span>선공 동전 던지기</span>
+        </button>
+        <button class="tool-btn" onclick="openTurnModal('dice')">
+          <span class="tool-icon">🎲</span>
+          <span>주사위 굴리기</span>
+        </button>
+      </div>
+    </section>
 
     <!-- 메인 뽑기 버튼 2종 -->
     <main class="button-group">
@@ -621,6 +830,50 @@
       </button>
     </footer>
 
+  </div>
+
+  <!-- 선공 정하기 모달 (동전 & 주사위) -->
+  <div class="modal-overlay" id="turnModal" onclick="closeTurnModal()">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <h2 class="modal-result-title" id="turnModalTitle">🪙 선공 동전 던지기</h2>
+      
+      <!-- 동전 던지기 영역 -->
+      <div id="coinArea" style="display: none; margin: 15px 0;">
+        <div class="coin-container" onclick="flipCoin()">
+          <div class="coin-inner" id="coinInner">
+            <div class="coin-side coin-front">
+              <span>👑</span>
+              <span style="font-size:15px; margin-top:2px;">혜주</span>
+            </div>
+            <div class="coin-side coin-back">
+              <span>🤴</span>
+              <span style="font-size:15px; margin-top:2px;">오빠</span>
+            </div>
+          </div>
+        </div>
+        <p class="turn-hint" id="coinHint">동전을 탭하면 공중으로 슝~ 날아올라요!</p>
+      </div>
+
+      <!-- 주사위 굴리기 영역 -->
+      <div id="diceArea" style="display: none; margin: 15px 0;">
+        <div class="dice-container" onclick="rollDice()">
+          <div class="dice-cube" id="diceCube1">🎲</div>
+          <div class="dice-cube" id="diceCube2">🎲</div>
+        </div>
+        <p class="turn-hint" id="diceHint">주사위를 탭해서 굴려보세요!</p>
+      </div>
+
+      <!-- 결과 메시지 박스 -->
+      <div class="turn-result-box" id="turnResultBox" style="display: none;">
+        <span class="modal-tag tag-special" id="turnResultTag">결과</span>
+        <div class="turn-result-text" id="turnResultText">👑 혜주 선공!</div>
+      </div>
+
+      <div class="confirm-btn-group" style="margin-top: 18px;">
+        <button class="btn-cancel" onclick="closeTurnModal()">닫기</button>
+        <button class="modal-close-btn btn-win-style" id="turnActionBtn" onclick="triggerTurnAction()" style="flex: 2; padding: 12px; font-size: 16px;">다시 던지기 🪙</button>
+      </div>
+    </div>
   </div>
 
   <!-- 결과 모달 -->
@@ -771,10 +1024,128 @@
     }
 
     // -----------------------------------------------------------------
-    // 4. 오디오 합성 효과음 (Web Audio API - 파일 없이 작동)
+    // 4. 오디오 합성 효과음 & 생일 축하 오르골 BGM (Web Audio API)
     // -----------------------------------------------------------------
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
+
+    // 생일 축하 노래 멜로디 (오르골 톤)
+    const BIRTHDAY_MELODY = [
+      { f: 392.00, d: 0.32 }, { f: 392.00, d: 0.32 }, { f: 440.00, d: 0.65 }, { f: 392.00, d: 0.65 }, { f: 523.25, d: 0.65 }, { f: 493.88, d: 1.15 },
+      { f: 392.00, d: 0.32 }, { f: 392.00, d: 0.32 }, { f: 440.00, d: 0.65 }, { f: 392.00, d: 0.65 }, { f: 587.33, d: 0.65 }, { f: 523.25, d: 1.15 },
+      { f: 392.00, d: 0.32 }, { f: 392.00, d: 0.32 }, { f: 783.99, d: 0.65 }, { f: 659.25, d: 0.65 }, { f: 523.25, d: 0.65 }, { f: 493.88, d: 0.65 }, { f: 440.00, d: 1.10 },
+      { f: 698.46, d: 0.32 }, { f: 698.46, d: 0.32 }, { f: 659.25, d: 0.65 }, { f: 523.25, d: 0.65 }, { f: 587.33, d: 0.65 }, { f: 523.25, d: 1.35 }
+    ];
+
+    let isBgmPlaying = false;
+    let bgmTimeouts = [];
+
+    function toggleBGM() {
+      if (isBgmPlaying) {
+        stopBGM();
+      } else {
+        startBGM();
+      }
+    }
+
+    function startBGM() {
+      try {
+        if (!audioCtx) {
+          audioCtx = new AudioContext();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        isBgmPlaying = true;
+        updateBgmBtnUI(true);
+        showToast("🎵 생일 축하 오르골 멜로디 ON 💖");
+        playMelodyLoop();
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    function stopBGM() {
+      isBgmPlaying = false;
+      bgmTimeouts.forEach(t => clearTimeout(t));
+      bgmTimeouts = [];
+      updateBgmBtnUI(false);
+      showToast("🔇 BGM OFF");
+    }
+
+    function updateBgmBtnUI(playing) {
+      const btn = document.getElementById('bgmBtn');
+      const icon = document.getElementById('bgmIcon');
+      const label = document.getElementById('bgmLabel');
+      if (playing) {
+        btn.classList.add('playing');
+        icon.textContent = '🎶';
+        label.textContent = 'BGM ON';
+      } else {
+        btn.classList.remove('playing');
+        icon.textContent = '🎵';
+        label.textContent = 'BGM OFF';
+      }
+    }
+
+    function playMelodyLoop() {
+      if (!isBgmPlaying || !audioCtx) return;
+
+      let currentTimeOffset = 0;
+
+      BIRTHDAY_MELODY.forEach((note) => {
+        const timeout = setTimeout(() => {
+          if (!isBgmPlaying) return;
+          playMusicBoxTone(note.f, note.d);
+        }, currentTimeOffset * 1000);
+        bgmTimeouts.push(timeout);
+        currentTimeOffset += (note.d + 0.12);
+      });
+
+      // 한 바퀴 끝나면 2초 휴식 후 루프 반복
+      const loopTimeout = setTimeout(() => {
+        if (isBgmPlaying) {
+          playMelodyLoop();
+        }
+      }, (currentTimeOffset + 2.0) * 1000);
+      bgmTimeouts.push(loopTimeout);
+    }
+
+    function playMusicBoxTone(freq, duration) {
+      try {
+        const now = audioCtx.currentTime;
+        const osc1 = audioCtx.createOscillator();
+        const gain1 = audioCtx.createGain();
+        osc1.type = 'sine';
+        osc1.frequency.setValueAtTime(freq, now);
+
+        const osc2 = audioCtx.createOscillator();
+        const gain2 = audioCtx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(freq * 2, now); // 2배음 반짝임
+
+        const masterGain = audioCtx.createGain();
+        masterGain.gain.setValueAtTime(0.12, now);
+
+        osc1.connect(gain1);
+        osc2.connect(gain2);
+        gain1.connect(masterGain);
+        gain2.connect(masterGain);
+        masterGain.connect(audioCtx.destination);
+
+        gain1.gain.setValueAtTime(0.7, now);
+        gain1.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.3);
+
+        gain2.gain.setValueAtTime(0.25, now);
+        gain2.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.15);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + duration + 0.35);
+        osc2.stop(now + duration + 0.35);
+      } catch (e) {}
+    }
 
     function playSound(type) {
       try {
@@ -827,6 +1198,154 @@
         }
       } catch (e) {
         // AudioContext 차단 환경에서는 무음 처리
+      }
+    }
+
+    // -----------------------------------------------------------------
+    // 5. 보드게임 선공 정하기 (동전 / 주사위) 로직
+    // -----------------------------------------------------------------
+    let currentTurnMode = 'coin';
+    let isFlipping = false;
+
+    function openTurnModal(mode) {
+      currentTurnMode = mode;
+      const modal = document.getElementById('turnModal');
+      const title = document.getElementById('turnModalTitle');
+      const coinArea = document.getElementById('coinArea');
+      const diceArea = document.getElementById('diceArea');
+      const resultBox = document.getElementById('turnResultBox');
+      const actionBtn = document.getElementById('turnActionBtn');
+
+      resultBox.style.display = 'none';
+
+      if (mode === 'coin') {
+        title.textContent = '🪙 선공 동전 던지기';
+        coinArea.style.display = 'block';
+        diceArea.style.display = 'none';
+        actionBtn.textContent = '동전 던지기 🪙';
+        document.getElementById('coinInner').style.transform = 'rotateY(0deg)';
+      } else {
+        title.textContent = '🎲 주사위 굴리기';
+        coinArea.style.display = 'none';
+        diceArea.style.display = 'block';
+        actionBtn.textContent = '주사위 굴리기 🎲';
+        document.getElementById('diceCube1').textContent = '🎲';
+        document.getElementById('diceCube2').textContent = '🎲';
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeTurnModal() {
+      document.getElementById('turnModal').classList.remove('active');
+    }
+
+    function triggerTurnAction() {
+      if (currentTurnMode === 'coin') {
+        flipCoin();
+      } else {
+        rollDice();
+      }
+    }
+
+    function flipCoin() {
+      if (isFlipping) return;
+      isFlipping = true;
+
+      const coinInner = document.getElementById('coinInner');
+      const resultBox = document.getElementById('turnResultBox');
+      const resultTag = document.getElementById('turnResultTag');
+      const resultText = document.getElementById('turnResultText');
+      const actionBtn = document.getElementById('turnActionBtn');
+
+      resultBox.style.display = 'none';
+      playSound('tick');
+
+      // 0: 혜주(앞면), 1: 오빠(뒷면)
+      const isHyeju = Math.random() < 0.5;
+      const rotations = 1800 + (isHyeju ? 0 : 180);
+
+      coinInner.style.transform = `rotateY(${rotations}deg)`;
+
+      let tickCount = 0;
+      const tickInterval = setInterval(() => {
+        playSound('tick');
+        tickCount++;
+        if (tickCount >= 5) clearInterval(tickInterval);
+      }, 180);
+
+      setTimeout(() => {
+        isFlipping = false;
+        resultBox.style.display = 'block';
+
+        if (isHyeju) {
+          resultTag.className = 'modal-tag tag-special';
+          resultTag.textContent = '✨ 선공 결정!';
+          resultText.textContent = '👑 혜주 선공! (앞면)';
+          resultText.style.color = '#E85A71';
+        } else {
+          resultTag.className = 'modal-tag tag-defeat';
+          resultTag.textContent = '✨ 선공 결정!';
+          resultText.textContent = '🤴 오빠 선공! (뒷면)';
+          resultText.style.color = '#2C5282';
+        }
+
+        actionBtn.textContent = '다시 던지기 🪙';
+        fireSimpleConfetti();
+        playSound('fanfare');
+      }, 1200);
+    }
+
+    const DICE_EMOJIS = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+
+    function rollDice() {
+      if (isFlipping) return;
+      isFlipping = true;
+
+      const cube1 = document.getElementById('diceCube1');
+      const cube2 = document.getElementById('diceCube2');
+      const resultBox = document.getElementById('turnResultBox');
+      const resultTag = document.getElementById('turnResultTag');
+      const resultText = document.getElementById('turnResultText');
+      const actionBtn = document.getElementById('turnActionBtn');
+
+      resultBox.style.display = 'none';
+      cube1.classList.add('rolling');
+      cube2.classList.add('rolling');
+
+      let rollCount = 0;
+      const rollInterval = setInterval(() => {
+        playSound('tick');
+        cube1.textContent = DICE_EMOJIS[Math.floor(Math.random() * 6)];
+        cube2.textContent = DICE_EMOJIS[Math.floor(Math.random() * 6)];
+        rollCount++;
+        if (rollCount >= 8) {
+          clearInterval(rollInterval);
+          finishDiceRoll();
+        }
+      }, 90);
+
+      function finishDiceRoll() {
+        cube1.classList.remove('rolling');
+        cube2.classList.remove('rolling');
+        isFlipping = false;
+
+        const val1 = Math.floor(Math.random() * 6) + 1;
+        const val2 = Math.floor(Math.random() * 6) + 1;
+        const sum = val1 + val2;
+
+        cube1.textContent = DICE_EMOJIS[val1 - 1];
+        cube2.textContent = DICE_EMOJIS[val2 - 1];
+
+        resultBox.style.display = 'block';
+        resultTag.className = 'modal-tag tag-special';
+        resultTag.textContent = '🎲 주사위 결과';
+        resultText.textContent = `${val1} + ${val2} = 총 ${sum}점!`;
+        resultText.style.color = '#E85A71';
+
+        actionBtn.textContent = '다시 굴리기 🎲';
+        fireSimpleConfetti();
+        playSound('fanfare');
       }
     }
 
