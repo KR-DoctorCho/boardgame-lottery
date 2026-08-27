@@ -5,6 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>혜주의 생일 보드게임 챌린지 🎁</title>
   
+  <!-- Favicon & Apple Touch Icon (귀여운 선물상자) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>">
+
   <!-- Canvas Confetti CDN for Celebration Effects -->
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
   
@@ -593,41 +597,43 @@
       gap: 6px;
     }
 
-    .tools-btn-group {
-      display: flex;
-      gap: 10px;
-    }
-
-    .tool-btn {
-      flex: 1;
+    .tool-btn-single {
+      width: 100%;
       background: var(--butter-yellow-light);
       border: 2px solid var(--butter-yellow);
       border-radius: 16px;
-      padding: 10px 8px;
+      padding: 12px 16px;
       font-family: 'Jua', sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       color: #7A5B04;
       cursor: pointer;
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
+      justify-content: space-between;
+      gap: 8px;
+      box-shadow: 0 3px 8px rgba(245, 208, 97, 0.2);
       transition: all 0.15s;
     }
 
-    .tool-btn:active {
+    .tool-btn-single:active {
       transform: translateY(2px);
       background: var(--butter-yellow);
     }
 
+    .tool-btn-single-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .tool-icon {
-      font-size: 18px;
+      font-size: 20px;
     }
 
     /* 동전 3D 애니메이션 */
     .coin-container {
-      width: 110px;
-      height: 110px;
+      width: 120px;
+      height: 120px;
       margin: 0 auto 12px;
       position: relative;
       perspective: 1000px;
@@ -653,7 +659,7 @@
       align-items: center;
       justify-content: center;
       font-family: 'Jua', sans-serif;
-      font-size: 34px;
+      font-size: 36px;
       border: 4px solid #FFF;
       box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
@@ -670,42 +676,10 @@
       transform: rotateY(180deg);
     }
 
-    /* 주사위 애니메이션 */
-    .dice-container {
-      display: flex;
-      justify-content: center;
-      gap: 16px;
-      margin: 0 auto 12px;
-      cursor: pointer;
-    }
-
-    .dice-cube {
-      width: 75px;
-      height: 75px;
-      background: #FFFFFF;
-      border: 3px solid #FFE0E6;
-      border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 44px;
-      box-shadow: 0 6px 15px rgba(255, 148, 168, 0.25);
-      transition: transform 0.2s;
-    }
-
-    .dice-cube.rolling {
-      animation: diceShake 0.6s ease-in-out infinite alternate;
-    }
-
-    @keyframes diceShake {
-      0% { transform: rotate(-15deg) scale(1); }
-      100% { transform: rotate(15deg) scale(1.15); }
-    }
-
     .turn-hint {
       font-size: 13px;
       color: #9A8789;
-      margin-top: 6px;
+      margin-top: 8px;
     }
 
     .turn-result-box {
@@ -777,17 +751,14 @@
 
     <!-- 선공 정하기 미니 도구 바 -->
     <section class="mini-tools-card">
-      <div class="tools-title">🎲 보드게임 시작 도구</div>
-      <div class="tools-btn-group">
-        <button class="tool-btn" onclick="openTurnModal('coin')">
+      <div class="tools-title">🎲 보드게임 선공 정하기</div>
+      <button class="tool-btn-single" onclick="openTurnModal()">
+        <div class="tool-btn-single-left">
           <span class="tool-icon">🪙</span>
-          <span>선공 동전 던지기</span>
-        </button>
-        <button class="tool-btn" onclick="openTurnModal('dice')">
-          <span class="tool-icon">🎲</span>
-          <span>주사위 굴리기</span>
-        </button>
-      </div>
+          <span>혜주 vs 용호 선공 동전 던지기</span>
+        </div>
+        <span style="font-size: 14px; opacity: 0.8;">➜</span>
+      </button>
     </section>
 
     <!-- 메인 뽑기 버튼 2종 -->
@@ -832,35 +803,26 @@
 
   </div>
 
-  <!-- 선공 정하기 모달 (동전 & 주사위) -->
+  <!-- 선공 정하기 모달 (동전) -->
   <div class="modal-overlay" id="turnModal" onclick="closeTurnModal()">
     <div class="modal-box" onclick="event.stopPropagation()">
-      <h2 class="modal-result-title" id="turnModalTitle">🪙 선공 동전 던지기</h2>
+      <h2 class="modal-result-title">🪙 선공 동전 던지기</h2>
       
       <!-- 동전 던지기 영역 -->
-      <div id="coinArea" style="display: none; margin: 15px 0;">
+      <div style="margin: 18px 0;">
         <div class="coin-container" onclick="flipCoin()">
           <div class="coin-inner" id="coinInner">
             <div class="coin-side coin-front">
               <span>👑</span>
-              <span style="font-size:15px; margin-top:2px;">혜주</span>
+              <span style="font-size:16px; margin-top:2px;">혜주</span>
             </div>
             <div class="coin-side coin-back">
               <span>🤴</span>
-              <span style="font-size:15px; margin-top:2px;">오빠</span>
+              <span style="font-size:16px; margin-top:2px;">용호</span>
             </div>
           </div>
         </div>
         <p class="turn-hint" id="coinHint">동전을 탭하면 공중으로 슝~ 날아올라요!</p>
-      </div>
-
-      <!-- 주사위 굴리기 영역 -->
-      <div id="diceArea" style="display: none; margin: 15px 0;">
-        <div class="dice-container" onclick="rollDice()">
-          <div class="dice-cube" id="diceCube1">🎲</div>
-          <div class="dice-cube" id="diceCube2">🎲</div>
-        </div>
-        <p class="turn-hint" id="diceHint">주사위를 탭해서 굴려보세요!</p>
       </div>
 
       <!-- 결과 메시지 박스 -->
@@ -871,7 +833,7 @@
 
       <div class="confirm-btn-group" style="margin-top: 18px;">
         <button class="btn-cancel" onclick="closeTurnModal()">닫기</button>
-        <button class="modal-close-btn btn-win-style" id="turnActionBtn" onclick="triggerTurnAction()" style="flex: 2; padding: 12px; font-size: 16px;">다시 던지기 🪙</button>
+        <button class="modal-close-btn btn-win-style" id="turnActionBtn" onclick="flipCoin()" style="flex: 2; padding: 12px; font-size: 16px;">동전 던지기 🪙</button>
       </div>
     </div>
   </div>
@@ -1202,50 +1164,32 @@
     }
 
     // -----------------------------------------------------------------
-    // 5. 보드게임 선공 정하기 (동전 / 주사위) 로직
+    // 5. 보드게임 선공 동전 던지기 로직
     // -----------------------------------------------------------------
-    let currentTurnMode = 'coin';
     let isFlipping = false;
+    let coinTotalRotation = 0;
 
-    function openTurnModal(mode) {
-      currentTurnMode = mode;
+    function openTurnModal() {
       const modal = document.getElementById('turnModal');
-      const title = document.getElementById('turnModalTitle');
-      const coinArea = document.getElementById('coinArea');
-      const diceArea = document.getElementById('diceArea');
       const resultBox = document.getElementById('turnResultBox');
       const actionBtn = document.getElementById('turnActionBtn');
+      const coinInner = document.getElementById('coinInner');
 
       resultBox.style.display = 'none';
+      actionBtn.textContent = '동전 던지기 🪙';
 
-      if (mode === 'coin') {
-        title.textContent = '🪙 선공 동전 던지기';
-        coinArea.style.display = 'block';
-        diceArea.style.display = 'none';
-        actionBtn.textContent = '동전 던지기 🪙';
-        document.getElementById('coinInner').style.transform = 'rotateY(0deg)';
-      } else {
-        title.textContent = '🎲 주사위 굴리기';
-        coinArea.style.display = 'none';
-        diceArea.style.display = 'block';
-        actionBtn.textContent = '주사위 굴리기 🎲';
-        document.getElementById('diceCube1').textContent = '🎲';
-        document.getElementById('diceCube2').textContent = '🎲';
-      }
+      // 모달 열릴 때 초기 각도 리셋
+      coinTotalRotation = 0;
+      coinInner.style.transition = 'none';
+      coinInner.style.transform = 'rotateY(0deg)';
+      void coinInner.offsetHeight; // reflow 강제
+      coinInner.style.transition = 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
 
       modal.classList.add('active');
     }
 
     function closeTurnModal() {
       document.getElementById('turnModal').classList.remove('active');
-    }
-
-    function triggerTurnAction() {
-      if (currentTurnMode === 'coin') {
-        flipCoin();
-      } else {
-        rollDice();
-      }
     }
 
     function flipCoin() {
@@ -1261,11 +1205,22 @@
       resultBox.style.display = 'none';
       playSound('tick');
 
-      // 0: 혜주(앞면), 1: 오빠(뒷면)
+      // 0: 혜주(앞면 0도), 1: 용호(뒷면 180도)
       const isHyeju = Math.random() < 0.5;
-      const rotations = 1800 + (isHyeju ? 0 : 180);
 
-      coinInner.style.transform = `rotateY(${rotations}deg)`;
+      // 최소 5바퀴(1800도) 회전 누적하여 다시 던져도 계속 자연스럽게 회전
+      const spin = 1800;
+      const targetRemainder = isHyeju ? 0 : 180;
+      const currentRemainder = coinTotalRotation % 360;
+      
+      let diff = targetRemainder - currentRemainder;
+      if (diff < 0) diff += 360;
+      if (diff === 0) diff = 360; // 같은 면이 연속 나와도 최소 1바퀴 더 돌게
+
+      coinTotalRotation += spin + diff;
+
+      coinInner.style.transition = 'transform 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+      coinInner.style.transform = `rotateY(${coinTotalRotation}deg)`;
 
       let tickCount = 0;
       const tickInterval = setInterval(() => {
@@ -1286,7 +1241,7 @@
         } else {
           resultTag.className = 'modal-tag tag-defeat';
           resultTag.textContent = '✨ 선공 결정!';
-          resultText.textContent = '🤴 오빠 선공! (뒷면)';
+          resultText.textContent = '🤴 용호 선공! (뒷면)';
           resultText.style.color = '#2C5282';
         }
 
@@ -1294,59 +1249,6 @@
         fireSimpleConfetti();
         playSound('fanfare');
       }, 1200);
-    }
-
-    const DICE_EMOJIS = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
-
-    function rollDice() {
-      if (isFlipping) return;
-      isFlipping = true;
-
-      const cube1 = document.getElementById('diceCube1');
-      const cube2 = document.getElementById('diceCube2');
-      const resultBox = document.getElementById('turnResultBox');
-      const resultTag = document.getElementById('turnResultTag');
-      const resultText = document.getElementById('turnResultText');
-      const actionBtn = document.getElementById('turnActionBtn');
-
-      resultBox.style.display = 'none';
-      cube1.classList.add('rolling');
-      cube2.classList.add('rolling');
-
-      let rollCount = 0;
-      const rollInterval = setInterval(() => {
-        playSound('tick');
-        cube1.textContent = DICE_EMOJIS[Math.floor(Math.random() * 6)];
-        cube2.textContent = DICE_EMOJIS[Math.floor(Math.random() * 6)];
-        rollCount++;
-        if (rollCount >= 8) {
-          clearInterval(rollInterval);
-          finishDiceRoll();
-        }
-      }, 90);
-
-      function finishDiceRoll() {
-        cube1.classList.remove('rolling');
-        cube2.classList.remove('rolling');
-        isFlipping = false;
-
-        const val1 = Math.floor(Math.random() * 6) + 1;
-        const val2 = Math.floor(Math.random() * 6) + 1;
-        const sum = val1 + val2;
-
-        cube1.textContent = DICE_EMOJIS[val1 - 1];
-        cube2.textContent = DICE_EMOJIS[val2 - 1];
-
-        resultBox.style.display = 'block';
-        resultTag.className = 'modal-tag tag-special';
-        resultTag.textContent = '🎲 주사위 결과';
-        resultText.textContent = `${val1} + ${val2} = 총 ${sum}점!`;
-        resultText.style.color = '#E85A71';
-
-        actionBtn.textContent = '다시 굴리기 🎲';
-        fireSimpleConfetti();
-        playSound('fanfare');
-      }
     }
 
     // -----------------------------------------------------------------
