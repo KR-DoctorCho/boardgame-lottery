@@ -665,15 +665,22 @@
     }
 
     .coin-front {
-      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
-      color: #FFF;
       transform: rotateY(0deg);
     }
 
     .coin-back {
-      background: linear-gradient(135deg, #97C4F8 0%, #CDE4FE 100%);
-      color: #1A4476;
       transform: rotateY(180deg);
+    }
+
+    /* 혜주(핑크) / 용호(블루) 동전 & 버튼 테마 */
+    .theme-hyeju {
+      background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%) !important;
+      color: #FFFFFF !important;
+    }
+
+    .theme-yongho {
+      background: linear-gradient(135deg, #97C4F8 0%, #CDE4FE 100%) !important;
+      color: #1A4476 !important;
     }
 
     .turn-side-selector {
@@ -715,10 +722,16 @@
       transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
-    .selector-pill.active {
+    .selector-pill.active-hyeju {
       background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
       color: #FFFFFF;
-      box-shadow: 0 2px 6px rgba(255, 148, 168, 0.3);
+      box-shadow: 0 2px 6px rgba(255, 148, 168, 0.35);
+    }
+
+    .selector-pill.active-yongho {
+      background: linear-gradient(135deg, #97C4F8 0%, #CDE4FE 100%);
+      color: #1A4476;
+      box-shadow: 0 2px 6px rgba(151, 196, 248, 0.35);
     }
 
     .turn-hint {
@@ -857,7 +870,7 @@
       <div class="turn-side-selector">
         <span class="selector-label">앞면(👑) 담당:</span>
         <div class="selector-btn-group">
-          <button class="selector-pill active" id="btnSelectHyeju" onclick="setFrontPlayer('hyeju')">혜주</button>
+          <button class="selector-pill active-hyeju" id="btnSelectHyeju" onclick="setFrontPlayer('hyeju')">혜주</button>
           <button class="selector-pill" id="btnSelectYongho" onclick="setFrontPlayer('yongho')">용호</button>
         </div>
       </div>
@@ -866,11 +879,11 @@
       <div style="margin: 14px 0;">
         <div class="coin-container" onclick="flipCoin()">
           <div class="coin-inner" id="coinInner">
-            <div class="coin-side coin-front" id="coinFrontSide">
+            <div class="coin-side coin-front theme-hyeju" id="coinFrontSide">
               <span id="coinFrontEmoji">👑</span>
               <span id="coinFrontName" style="font-size:16px; margin-top:2px;">혜주</span>
             </div>
-            <div class="coin-side coin-back" id="coinBackSide">
+            <div class="coin-side coin-back theme-yongho" id="coinBackSide">
               <span id="coinBackEmoji">🤴</span>
               <span id="coinBackName" style="font-size:16px; margin-top:2px;">용호</span>
             </div>
@@ -1253,6 +1266,8 @@
 
       const btnHyeju = document.getElementById('btnSelectHyeju');
       const btnYongho = document.getElementById('btnSelectYongho');
+      const frontSide = document.getElementById('coinFrontSide');
+      const backSide = document.getElementById('coinBackSide');
       const frontName = document.getElementById('coinFrontName');
       const backName = document.getElementById('coinBackName');
       const frontEmoji = document.getElementById('coinFrontEmoji');
@@ -1262,15 +1277,23 @@
       resultBox.style.display = 'none';
 
       if (player === 'hyeju') {
-        btnHyeju.classList.add('active');
-        btnYongho.classList.remove('active');
+        btnHyeju.className = 'selector-pill active-hyeju';
+        btnYongho.className = 'selector-pill';
+        
+        // 앞면 = 혜주(핑크), 뒷면 = 용호(블루)
+        frontSide.className = 'coin-side coin-front theme-hyeju';
+        backSide.className = 'coin-side coin-back theme-yongho';
         frontEmoji.textContent = '👑';
         frontName.textContent = '혜주';
         backEmoji.textContent = '🤴';
         backName.textContent = '용호';
       } else {
-        btnHyeju.classList.remove('active');
-        btnYongho.classList.add('active');
+        btnHyeju.className = 'selector-pill';
+        btnYongho.className = 'selector-pill active-yongho';
+        
+        // 앞면 = 용호(블루), 뒷면 = 혜주(핑크)
+        frontSide.className = 'coin-side coin-front theme-yongho';
+        backSide.className = 'coin-side coin-back theme-hyeju';
         frontEmoji.textContent = '🤴';
         frontName.textContent = '용호';
         backEmoji.textContent = '👑';
