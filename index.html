@@ -55,6 +55,12 @@
       overflow-x: hidden;
     }
 
+    /* 모달 열렸을 때 뒷배경 스크롤 완벽 차단 */
+    body.modal-open {
+      overflow: hidden !important;
+      touch-action: none;
+    }
+
     .app-container {
       width: 100%;
       max-width: 440px;
@@ -392,6 +398,7 @@
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.25s ease;
+      touch-action: none; /* 모달 뒷배경 터치 스와이프 방지 */
     }
 
     .modal-overlay.active {
@@ -411,6 +418,10 @@
       transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
       border: 4px solid #FFF5F7;
       position: relative;
+      max-height: 85vh;
+      overflow-y: auto;
+      touch-action: pan-y;
+      -webkit-overflow-scrolling: touch;
     }
 
     .modal-overlay.active .modal-box {
@@ -1182,8 +1193,17 @@
     let isDrawing = false;
 
     // -----------------------------------------------------------------
-    // 2. 초기화 및 로컬스토리지 복원
+    // 2. 초기화 및 로컬스토리지 복원 & 모달 스크롤 락 제어
     // -----------------------------------------------------------------
+    function syncBodyScrollLock() {
+      const hasActiveModal = !!document.querySelector('.modal-overlay.active');
+      if (hasActiveModal) {
+        document.body.classList.add('modal-open');
+      } else {
+        document.body.classList.remove('modal-open');
+      }
+    }
+
     function initApp() {
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
@@ -1201,6 +1221,12 @@
       }
       saveState();
       renderUI();
+
+      // 모든 모달 오버레이의 active 클래스 변화 감지하여 body 스크롤 락 자동 동기화
+      document.querySelectorAll('.modal-overlay').forEach(modal => {
+        const observer = new MutationObserver(syncBodyScrollLock);
+        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+      });
     }
 
     function saveState() {
