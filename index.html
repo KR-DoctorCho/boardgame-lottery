@@ -475,11 +475,20 @@
       border-radius: 18px;
       font-family: 'Jua', sans-serif;
       font-size: 18px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .btn-win-style {
       background: linear-gradient(135deg, #FF94A8 0%, #FFB7C5 100%);
       color: #FFF;
-      cursor: pointer;
       box-shadow: 0 5px 15px rgba(255, 148, 168, 0.35);
-      transition: all 0.15s;
+    }
+
+    .btn-defeat-style {
+      background: linear-gradient(135deg, #A2CCFB 0%, #C8E1FF 100%);
+      color: #2C5282;
+      box-shadow: 0 5px 15px rgba(162, 204, 251, 0.35);
     }
 
     .modal-close-btn:active {
@@ -614,7 +623,7 @@
       </div>
       <h2 class="modal-result-title" id="modalTitle">스페셜 기프트 A</h2>
       <p class="modal-result-desc" id="modalDesc">써지컬 목걸이를 획득하셨습니다!</p>
-      <button class="modal-close-btn" onclick="closeResultModal()">신난다! 확인 💖</button>
+      <button class="modal-close-btn btn-win-style" id="modalCloseBtn" onclick="closeResultModal()">신난다! 확인 💖</button>
     </div>
   </div>
 
@@ -636,7 +645,8 @@
 
   <script>
     // -----------------------------------------------------------------
-    // 1. 초기 데이터 정의 (총 4개 선물)
+    // -----------------------------------------------------------------
+    // 1. 초기 데이터 정의 (총 4개 선물 & 패배 풀)
     // -----------------------------------------------------------------
     const INITIAL_WIN_POOL = [
       { id: 1, name: "💎 스페셜 기프트 A", detail: "영롱하고 변색없는 '써지컬 목걸이' 당첨!", isSpecial: true },
@@ -645,32 +655,37 @@
       { id: 4, name: "🧁 맛있는 널담 휘낭시에", detail: "쫀득하고 고소한 프리미엄 휘낭시에 디저트 획득!", isSpecial: false }
     ];
 
-    const DEFEAT_POOL = [
+    const INITIAL_DEFEAT_POOL = [
       {
+        id: 'aegyo',
         title: "💕 애교 3초 부리기!",
         desc: "사랑스러운 애교 3초를 부리면 '승리 시 뽑기권' 1회를 즉시 획득합니다!",
         isBonus: true,
         emoji: "🥰"
       },
       {
+        id: 'd1',
         title: "꽝! 😜",
         desc: "아쉽지만 다음 판 승리를 노려보세요! 파이팅!",
         isBonus: false,
         emoji: "💨"
       },
       {
+        id: 'd2',
         title: "꽝! 👑",
         desc: "남자친구의 당당한 승리 만세! (다음 판엔 꼭 이겨봐요!)",
         isBonus: false,
         emoji: "🤴"
       },
       {
+        id: 'd3',
         title: "꽝! 💨",
         desc: "아쉽지만 다음 기회에! 운을 아껴둔 거예요!",
         isBonus: false,
         emoji: "🍃"
       },
       {
+        id: 'd4',
         title: "꽝! 🍀",
         desc: "운이 살짝 빗나갔습니다! 행운의 네잎클로버 충전 중...",
         isBonus: false,
@@ -678,11 +693,12 @@
       }
     ];
 
-    // LocalStorage 키 (V2: 4개 풀 지원)
-    const STORAGE_KEY = 'HYEJU_BIRTHDAY_GAME_STATE_V2';
+    // LocalStorage 키 (V3: 애교 1회 한정 및 패배 풀 상태 지원)
+    const STORAGE_KEY = 'HYEJU_BIRTHDAY_GAME_STATE_V3';
 
     // 앱 상태
     let remainingWinPool = [];
+    let remainingDefeatPool = [];
     let isDrawing = false;
 
     // -----------------------------------------------------------------
@@ -692,12 +708,16 @@
       const savedData = localStorage.getItem(STORAGE_KEY);
       if (savedData) {
         try {
-          remainingWinPool = JSON.parse(savedData);
+          const parsed = JSON.parse(savedData);
+          remainingWinPool = Array.isArray(parsed.winPool) ? parsed.winPool : [...INITIAL_WIN_POOL];
+          remainingDefeatPool = Array.isArray(parsed.defeatPool) ? parsed.defeatPool : [...INITIAL_DEFEAT_POOL];
         } catch (e) {
           remainingWinPool = [...INITIAL_WIN_POOL];
+          remainingDefeatPool = [...INITIAL_DEFEAT_POOL];
         }
       } else {
         remainingWinPool = [...INITIAL_WIN_POOL];
+        remainingDefeatPool = [...INITIAL_DEFEAT_POOL];
       }
       saveState();
       renderUI();
@@ -705,7 +725,10 @@
 
     function saveState() {
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remainingWinPool));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          winPool: remainingWinPool,
+          defeatPool: remainingDefeatPool
+        }));
       } catch (e) {
         console.warn('LocalStorage save failed:', e);
       }
@@ -845,6 +868,7 @@
       const title = document.getElementById('modalTitle');
       const desc = document.getElementById('modalDesc');
       const emoji = document.getElementById('modalEmoji');
+      const closeBtn = document.getElementById('modalCloseBtn');
 
       if (type === 'win') {
         // 비복원 추출 (중복 제거)
@@ -867,12 +891,22 @@
 
         title.textContent = selectedGift.name;
         desc.textContent = selectedGift.detail;
+        
+        // 버튼 문구 & 스타일: 좋은 결과
+        closeBtn.textContent = '신난다! 확인 💖';
+        closeBtn.className = 'modal-close-btn btn-win-style';
         playSound('fanfare');
 
       } else {
-        // 패배 뽑기 (무작위 복원 추출)
-        const randomIndex = Math.floor(Math.random() * DEFEAT_POOL.length);
-        const result = DEFEAT_POOL[randomIndex];
+        // 패배 뽑기 (애교 3초는 게임 당 1회만, 꽝들은 무작위 등장)
+        const randomIndex = Math.floor(Math.random() * remainingDefeatPool.length);
+        const result = remainingDefeatPool[randomIndex];
+
+        // 애교 3초 찬스(isBonus)가 당첨되었을 경우, 다음번에는 나오지 않도록 풀에서 영구 제거!
+        if (result.isBonus) {
+          remainingDefeatPool.splice(randomIndex, 1);
+        }
+        saveState();
 
         tag.className = 'modal-tag tag-defeat';
         tag.textContent = result.isBonus ? '💖 특별 만회 찬스!' : '🥺 다음 기회에...';
@@ -881,9 +915,15 @@
         desc.textContent = result.desc;
 
         if (result.isBonus) {
+          // 보너스 찬스 (좋은 결과)
+          closeBtn.textContent = '신난다! 확인 💖';
+          closeBtn.className = 'modal-close-btn btn-win-style';
           fireSimpleConfetti();
           playSound('fanfare');
         } else {
+          // 꽝 (아쉬운 결과)
+          closeBtn.textContent = '아쉽지만 다음 기회에! 💨';
+          closeBtn.className = 'modal-close-btn btn-defeat-style';
           playSound('sad');
         }
       }
@@ -962,10 +1002,11 @@
 
     function resetGame() {
       remainingWinPool = [...INITIAL_WIN_POOL];
+      remainingDefeatPool = [...INITIAL_DEFEAT_POOL];
       saveState();
       renderUI();
       closeResetModal();
-      showToast("🔄 모든 뽑기 목록이 4개로 초기화되었습니다!");
+      showToast("🔄 모든 뽑기 목록이 초기화되었습니다!");
       playSound('fanfare');
     }
 
