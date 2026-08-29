@@ -1225,11 +1225,7 @@
     // -----------------------------------------------------------------
     function syncBodyScrollLock() {
       const hasActiveModal = !!document.querySelector('.modal-overlay.active');
-      if (hasActiveModal) {
-        document.body.classList.add('modal-open');
-      } else {
-        document.body.classList.remove('modal-open');
-      }
+      document.body.classList.toggle('modal-open', hasActiveModal);
     }
 
     function initApp() {
@@ -1250,12 +1246,14 @@
       saveState();
       renderUI();
 
-      // 하나의 옵저버만 사용해 모든 모달 상태 감시
+      // 하나의 옵저버를 공유하되 모달 자체의 class 변경만 감시한다.
+      // body까지 감시하면 modal-open 갱신이 다시 옵저버를 호출하는 무한 루프가 생긴다.
       const modalObserver = new MutationObserver(syncBodyScrollLock);
-      modalObserver.observe(document.body, {
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class']
+      document.querySelectorAll('.modal-overlay').forEach(modal => {
+        modalObserver.observe(modal, {
+          attributes: true,
+          attributeFilter: ['class']
+        });
       });
 
       document.querySelectorAll('[role="button"][tabindex="0"]').forEach(el => {
