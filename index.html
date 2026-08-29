@@ -1113,7 +1113,7 @@
         <span class="modal-tag" id="modalTag">🎉 승리 획득!</span>
       </div>
       <h2 class="modal-result-title" id="modalTitle">스페셜 기프트 A</h2>
-      <p class="modal-result-desc" id="modalDesc">써지컬 목걸이를 획득하셨습니다!</p>
+      <p class="modal-result-desc" id="modalDesc">축하합니다! 특별한 선물을 획득하셨습니다!</p>
       <button class="modal-close-btn btn-win-style" id="modalCloseBtn" onclick="closeResultModal()">신난다! 확인 💖</button>
     </div>
   </div>
@@ -1140,10 +1140,10 @@
     // 1. 초기 데이터 정의 (총 4개 선물 & 패배 풀)
     // -----------------------------------------------------------------
     const INITIAL_WIN_POOL = [
-      { id: 1, name: "💎 스페셜 기프트 A", detail: "영롱하고 변색없는 '써지컬 목걸이' 당첨!", isSpecial: true },
-      { id: 2, name: "💎 스페셜 기프트 B", detail: "반짝반짝 빛나는 '써지컬 귀걸이' 당첨!", isSpecial: true },
-      { id: 3, name: "🍭 달콤한 츄파춥스 사탕", detail: "당 충전 완료! 달콤한 막대사탕 획득!", isSpecial: false },
-      { id: 4, name: "🧁 맛있는 널담 휘낭시에", detail: "쫀득하고 고소한 프리미엄 휘낭시에 디저트 획득!", isSpecial: false }
+      { id: 1, name: "💎 스페셜 기프트 A", detail: "축하합니다! 대박 스페셜 선물을 획득하셨어요! ✨", isSpecial: true },
+      { id: 2, name: "💎 스페셜 기프트 B", detail: "축하합니다! 반짝반짝 스페셜 선물을 획득하셨어요! ✨", isSpecial: true },
+      { id: 3, name: "🍭 일반 기프트 A", detail: "축하합니다! 달콤하고 기분 좋은 선물을 획득하셨어요! 🍬", isSpecial: false },
+      { id: 4, name: "🧁 일반 기프트 B", detail: "축하합니다! 맛있는 디저트 선물을 획득하셨어요! 🧁", isSpecial: false }
     ];
 
     const INITIAL_DEFEAT_POOL = [
@@ -1184,8 +1184,8 @@
       }
     ];
 
-    // LocalStorage 키 (V3: 애교 1회 한정 및 패배 풀 상태 지원)
-    const STORAGE_KEY = 'HYEJU_BIRTHDAY_GAME_STATE_V3';
+    // LocalStorage 키 (V4: 선물 상품명 비공개 블라인드 처리)
+    const STORAGE_KEY = 'HYEJU_BIRTHDAY_GAME_STATE_V4';
 
     // 앱 상태
     let remainingWinPool = [];
