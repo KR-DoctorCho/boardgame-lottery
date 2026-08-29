@@ -40,7 +40,11 @@
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
+    }
+
+    button, [role="button"] {
       user-select: none;
+      touch-action: manipulation;
     }
 
     body {
@@ -399,6 +403,7 @@
       pointer-events: none;
       transition: opacity 0.25s ease;
       touch-action: none; /* 모달 뒷배경 터치 스와이프 방지 */
+      contain: layout paint;
     }
 
     .modal-overlay.active {
@@ -909,6 +914,29 @@
     .toast.show {
       transform: translateX(-50%) translateY(0);
     }
+
+    /* 모바일 GPU 부하와 멀미 유발 애니메이션 최소화 */
+    @media (max-width: 600px) {
+      .header-card,
+      .bgm-toggle-btn,
+      .modal-overlay {
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+
+      .modal-overlay {
+        background: rgba(45, 30, 35, 0.68);
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -930,7 +958,7 @@
     </header>
 
     <!-- 중앙 귀여운 마스코트 & 남은 선물 개수 -->
-    <div class="mascot-area" id="mascotArea" onclick="celebrateClick()">
+    <div class="mascot-area" id="mascotArea" role="button" tabindex="0" aria-label="생일 축하 폭죽 터뜨리기" onclick="celebrateClick()">
       <div class="mascot-emoji" id="mascotEmoji">🎁</div>
     </div>
 
@@ -985,7 +1013,7 @@
       </button>
 
       <div class="accordion-card">
-        <div class="accordion-header" onclick="toggleGiftList()">
+        <div class="accordion-header" id="giftListHeader" role="button" tabindex="0" aria-expanded="false" aria-controls="giftListContent" onclick="toggleGiftList()">
           <span>🎁 남은 승리 선물 목록 보기</span>
           <span id="accordionArrow">▼</span>
         </div>
@@ -1077,7 +1105,7 @@
 
       <!-- 동전 던지기 영역 -->
       <div style="margin: 14px 0;">
-        <div class="coin-container" onclick="flipCoin()">
+        <div class="coin-container" role="button" tabindex="0" aria-label="동전 던지기" onclick="flipCoin()">
           <div class="coin-inner" id="coinInner">
             <div class="coin-side coin-front theme-hyeju" id="coinFrontSide">
               <span id="coinFrontEmoji">👑</span>
@@ -1222,10 +1250,29 @@
       saveState();
       renderUI();
 
-      // 모든 모달 오버레이의 active 클래스 변화 감지하여 body 스크롤 락 자동 동기화
-      document.querySelectorAll('.modal-overlay').forEach(modal => {
-        const observer = new MutationObserver(syncBodyScrollLock);
-        observer.observe(modal, { attributes: true, attributeFilter: ['class'] });
+      // 하나의 옵저버만 사용해 모든 모달 상태 감시
+      const modalObserver = new MutationObserver(syncBodyScrollLock);
+      modalObserver.observe(document.body, {
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class']
+      });
+
+      document.querySelectorAll('[role="button"][tabindex="0"]').forEach(el => {
+        el.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            el.click();
+          }
+        });
+      });
+
+      document.addEventListener('keydown', event => {
+        if (event.key !== 'Escape') return;
+        const activeModal = document.querySelector('.modal-overlay.active');
+        if (!activeModal) return;
+        activeModal.classList.remove('active');
+        cancelCoinFlip();
       });
     }
 
@@ -1271,6 +1318,7 @@
     // 4. 오디오 합성 효과음 & 생일 축하 오르골 BGM (Web Audio API)
     // -----------------------------------------------------------------
     let audioCtx = null;
+    let masterAudioGain = null;
 
     // 모바일(iOS Safari/Android) 호환용 AudioContext 초기화 및 활성화
     function ensureAudioContext() {
@@ -1278,6 +1326,9 @@
         const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
         if (AudioCtxClass) {
           audioCtx = new AudioCtxClass();
+          masterAudioGain = audioCtx.createGain();
+          masterAudioGain.gain.value = 0.72;
+          masterAudioGain.connect(audioCtx.destination);
         }
       }
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -1318,32 +1369,50 @@
     ];
 
     let isBgmPlaying = false;
-    let bgmTimeouts = [];
+    let isStartingBgm = false;
+    let bgmLoopTimer = null;
+    let activeBgmOscillators = new Set();
 
     function toggleBGM() {
       if (isBgmPlaying) {
         stopBGM();
       } else {
+        // iOS는 실제 탭 이벤트 안에서 오디오 생성/재개가 시작되어야 한다.
+        ensureAudioContext().catch(() => {});
         startBGM();
       }
     }
 
     async function startBGM() {
+      if (isBgmPlaying || isStartingBgm) return;
+      isStartingBgm = true;
       try {
         await ensureAudioContext();
+        if (!audioCtx || audioCtx.state !== 'running') {
+          throw new Error('AudioContext could not be started');
+        }
         isBgmPlaying = true;
         updateBgmBtnUI(true);
         showToast("🎵 생일 축하 오르골 BGM ON 💖");
         playMelodyLoop();
       } catch (e) {
+        isBgmPlaying = false;
+        updateBgmBtnUI(false);
+        showToast("🔇 브라우저의 소리 재생 권한을 확인해주세요.");
         console.warn("BGM start error:", e);
+      } finally {
+        isStartingBgm = false;
       }
     }
 
     function stopBGM() {
       isBgmPlaying = false;
-      bgmTimeouts.forEach(t => clearTimeout(t));
-      bgmTimeouts = [];
+      if (bgmLoopTimer) clearTimeout(bgmLoopTimer);
+      bgmLoopTimer = null;
+      activeBgmOscillators.forEach(osc => {
+        try { osc.stop(); } catch (e) {}
+      });
+      activeBgmOscillators.clear();
       updateBgmBtnUI(false);
       showToast("🔇 BGM OFF");
     }
@@ -1366,37 +1435,33 @@
     function playMelodyLoop() {
       if (!isBgmPlaying || !audioCtx) return;
 
-      bgmTimeouts.forEach(t => clearTimeout(t));
-      bgmTimeouts = [];
-
+      if (bgmLoopTimer) clearTimeout(bgmLoopTimer);
+      const startAt = audioCtx.currentTime + 0.04;
       let currentTimeOffset = 0;
 
       BIRTHDAY_MELODY.forEach((note) => {
-        const timeout = setTimeout(() => {
-          if (!isBgmPlaying) return;
-          playMusicBoxTone(note.f, note.d);
-        }, currentTimeOffset * 1000);
-        bgmTimeouts.push(timeout);
+        scheduleMusicBoxTone(note.f, note.d, startAt + currentTimeOffset);
         currentTimeOffset += (note.d + 0.12);
       });
 
-      // 한 바퀴 끝나면 1.5초 휴식 후 루프 반복
-      const loopTimeout = setTimeout(() => {
+      // 음표는 Web Audio 타임라인에 일괄 예약하고 루프 타이머만 유지한다.
+      bgmLoopTimer = setTimeout(() => {
         if (isBgmPlaying) {
           playMelodyLoop();
         }
       }, (currentTimeOffset + 1.5) * 1000);
-      bgmTimeouts.push(loopTimeout);
     }
 
     // 모바일 스피커에서도 선명하고 청아하게 들리는 오르골 톤
     function playMusicBoxTone(freq, duration) {
       if (!audioCtx) return;
+      scheduleMusicBoxTone(freq, duration, audioCtx.currentTime + 0.005);
+    }
+
+    function scheduleMusicBoxTone(freq, duration, startTime) {
+      if (!audioCtx || !masterAudioGain) return;
       try {
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-        const now = audioCtx.currentTime + 0.005;
+        const now = Math.max(startTime, audioCtx.currentTime + 0.005);
 
         // 1. 기본음 (부드러운 삼각파)
         const osc1 = audioCtx.createOscillator();
@@ -1422,9 +1487,11 @@
 
         osc1.connect(gain1);
         osc2.connect(gain2);
+        osc3.connect(gain3);
         gain1.connect(masterGain);
         gain2.connect(masterGain);
-        masterGain.connect(audioCtx.destination);
+        gain3.connect(masterGain);
+        masterGain.connect(masterAudioGain);
 
         // 부드럽고 안전한 Linear Ramp 엔벨로프 (Safari WebKit 오류 방지)
         gain1.gain.setValueAtTime(0.75, now);
@@ -1442,6 +1509,10 @@
         osc1.stop(now + duration + 0.45);
         osc2.stop(now + duration + 0.45);
         osc3.stop(now + duration + 0.45);
+        [osc1, osc2, osc3].forEach(osc => {
+          activeBgmOscillators.add(osc);
+          osc.addEventListener('ended', () => activeBgmOscillators.delete(osc), { once: true });
+        });
       } catch (e) {
         console.warn("Music box tone error:", e);
       }
@@ -1526,6 +1597,16 @@
     let isFlipping = false;
     let coinTotalRotation = 0;
     let frontPlayer = 'hyeju'; // 'hyeju' (앞면: 혜주, 뒷면: 용호) or 'yongho' (앞면: 용호, 뒷면: 혜주)
+    let coinTickInterval = null;
+    let coinResultTimer = null;
+
+    function cancelCoinFlip() {
+      if (coinTickInterval) clearInterval(coinTickInterval);
+      if (coinResultTimer) clearTimeout(coinResultTimer);
+      coinTickInterval = null;
+      coinResultTimer = null;
+      isFlipping = false;
+    }
 
     function openTurnModal() {
       const modal = document.getElementById('turnModal');
@@ -1547,6 +1628,7 @@
     }
 
     function closeTurnModal() {
+      cancelCoinFlip();
       document.getElementById('turnModal').classList.remove('active');
     }
 
@@ -1624,13 +1706,18 @@
       coinInner.style.transform = `rotateY(${coinTotalRotation}deg)`;
 
       let tickCount = 0;
-      const tickInterval = setInterval(() => {
+      coinTickInterval = setInterval(() => {
         playSound('tick');
         tickCount++;
-        if (tickCount >= 5) clearInterval(tickInterval);
+        if (tickCount >= 4) {
+          clearInterval(coinTickInterval);
+          coinTickInterval = null;
+        }
       }, 180);
 
-      setTimeout(() => {
+      coinResultTimer = setTimeout(() => {
+        coinResultTimer = null;
+        if (!document.getElementById('turnModal').classList.contains('active')) return;
         isFlipping = false;
         resultBox.style.display = 'block';
 
@@ -1800,6 +1887,8 @@
     }
 
     function revealFinalBirthdayLetter() {
+      // 버튼을 누르는 순간 오디오를 먼저 활성화해 iOS 자동재생 제한을 통과한다.
+      ensureAudioContext().catch(() => {});
       closeConfirmModal2();
       setTimeout(() => {
         // 최종 편지 모달 오픈 & 화려한 폭죽 + 오르골 BGM
@@ -1824,36 +1913,18 @@
     // -----------------------------------------------------------------
     function fireConfettiBurst() {
       if (typeof confetti !== 'function') return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-      const duration = 2.5 * 1000;
-      const end = Date.now() + duration;
-
-      (function frame() {
-        confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#FFB7C5', '#FFE89E', '#FF6B8B', '#A2CCFB', '#FFF']
-        });
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#FFB7C5', '#FFE89E', '#FF6B8B', '#A2CCFB', '#FFF']
-        });
-
-        if (Date.now() < end) {
-          requestAnimationFrame(frame);
-        }
-      }());
+      const colors = ['#FFB7C5', '#FFE89E', '#FF6B8B', '#A2CCFB', '#FFF'];
+      confetti({ particleCount: 45, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors });
+      confetti({ particleCount: 45, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors });
     }
 
     function fireSimpleConfetti() {
       if (typeof confetti !== 'function') return;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       confetti({
-        particleCount: 60,
+        particleCount: 36,
         spread: 70,
         origin: { y: 0.65 },
         colors: ['#FFB7C5', '#FFE89E', '#FF94A8', '#FFF']
@@ -1872,8 +1943,11 @@
     function toggleGiftList() {
       const content = document.getElementById('giftListContent');
       const arrow = document.getElementById('accordionArrow');
+      const header = document.getElementById('giftListHeader');
       content.classList.toggle('open');
-      arrow.textContent = content.classList.contains('open') ? '▲' : '▼';
+      const isOpen = content.classList.contains('open');
+      arrow.textContent = isOpen ? '▲' : '▼';
+      header.setAttribute('aria-expanded', String(isOpen));
     }
 
     function openResetModal() {
@@ -1894,12 +1968,15 @@
       playSound('fanfare');
     }
 
+    let toastTimer = null;
     function showToast(msg) {
       const toast = document.getElementById('toastMessage');
       toast.textContent = msg;
       toast.classList.add('show');
-      setTimeout(() => {
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
         toast.classList.remove('show');
+        toastTimer = null;
       }, 2400);
     }
 
