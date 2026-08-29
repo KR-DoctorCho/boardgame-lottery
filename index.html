@@ -1270,8 +1270,44 @@
     // -----------------------------------------------------------------
     // 4. 오디오 합성 효과음 & 생일 축하 오르골 BGM (Web Audio API)
     // -----------------------------------------------------------------
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx = null;
+
+    // 모바일(iOS Safari/Android) 호환용 AudioContext 초기화 및 활성화
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtxClass) {
+          audioCtx = new AudioCtxClass();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        return audioCtx.resume();
+      }
+      return Promise.resolve();
+    }
+
+    // 모바일 첫 터치/클릭 시 오디오 컨텍스트 자동 언락 (사일런트 버퍼 재생)
+    const audioUnlockEvents = ['touchstart', 'touchend', 'pointerdown', 'click'];
+    function unlockAudioOnFirstInteraction() {
+      ensureAudioContext().then(() => {
+        if (audioCtx) {
+          try {
+            const buffer = audioCtx.createBuffer(1, 1, 22050);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+          } catch (e) {}
+        }
+      }).catch(() => {});
+
+      audioUnlockEvents.forEach(evt => {
+        document.removeEventListener(evt, unlockAudioOnFirstInteraction, true);
+      });
+    }
+    audioUnlockEvents.forEach(evt => {
+      document.addEventListener(evt, unlockAudioOnFirstInteraction, { capture: true, once: true });
+    });
 
     // 생일 축하 노래 멜로디 (오르골 톤)
     const BIRTHDAY_MELODY = [
@@ -1292,21 +1328,15 @@
       }
     }
 
-    function startBGM() {
+    async function startBGM() {
       try {
-        if (!audioCtx) {
-          audioCtx = new AudioContext();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
-
+        await ensureAudioContext();
         isBgmPlaying = true;
         updateBgmBtnUI(true);
-        showToast("🎵 생일 축하 오르골 멜로디 ON 💖");
+        showToast("🎵 생일 축하 오르골 BGM ON 💖");
         playMelodyLoop();
       } catch (e) {
-        console.warn(e);
+        console.warn("BGM start error:", e);
       }
     }
 
@@ -1336,6 +1366,9 @@
     function playMelodyLoop() {
       if (!isBgmPlaying || !audioCtx) return;
 
+      bgmTimeouts.forEach(t => clearTimeout(t));
+      bgmTimeouts = [];
+
       let currentTimeOffset = 0;
 
       BIRTHDAY_MELODY.forEach((note) => {
@@ -1347,30 +1380,45 @@
         currentTimeOffset += (note.d + 0.12);
       });
 
-      // 한 바퀴 끝나면 2초 휴식 후 루프 반복
+      // 한 바퀴 끝나면 1.5초 휴식 후 루프 반복
       const loopTimeout = setTimeout(() => {
         if (isBgmPlaying) {
           playMelodyLoop();
         }
-      }, (currentTimeOffset + 2.0) * 1000);
+      }, (currentTimeOffset + 1.5) * 1000);
       bgmTimeouts.push(loopTimeout);
     }
 
+    // 모바일 스피커에서도 선명하고 청아하게 들리는 오르골 톤
     function playMusicBoxTone(freq, duration) {
+      if (!audioCtx) return;
       try {
-        const now = audioCtx.currentTime;
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        const now = audioCtx.currentTime + 0.005;
+
+        // 1. 기본음 (부드러운 삼각파)
         const osc1 = audioCtx.createOscillator();
         const gain1 = audioCtx.createGain();
-        osc1.type = 'sine';
+        osc1.type = 'triangle';
         osc1.frequency.setValueAtTime(freq, now);
 
+        // 2. 2배음 (맑은 옥타브 반짝임)
         const osc2 = audioCtx.createOscillator();
         const gain2 = audioCtx.createGain();
         osc2.type = 'sine';
-        osc2.frequency.setValueAtTime(freq * 2, now); // 2배음 반짝임
+        osc2.frequency.setValueAtTime(freq * 2, now);
 
+        // 3. 3배음 (영롱한 오르골 챠임)
+        const osc3 = audioCtx.createOscillator();
+        const gain3 = audioCtx.createGain();
+        osc3.type = 'sine';
+        osc3.frequency.setValueAtTime(freq * 3, now);
+
+        // 마스터 볼륨 (모바일 스피커 최적화: 0.38)
         const masterGain = audioCtx.createGain();
-        masterGain.gain.setValueAtTime(0.12, now);
+        masterGain.gain.setValueAtTime(0.38, now);
 
         osc1.connect(gain1);
         osc2.connect(gain2);
@@ -1378,72 +1426,99 @@
         gain2.connect(masterGain);
         masterGain.connect(audioCtx.destination);
 
-        gain1.gain.setValueAtTime(0.7, now);
-        gain1.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.3);
+        // 부드럽고 안전한 Linear Ramp 엔벨로프 (Safari WebKit 오류 방지)
+        gain1.gain.setValueAtTime(0.75, now);
+        gain1.gain.linearRampToValueAtTime(0.001, now + duration + 0.4);
 
-        gain2.gain.setValueAtTime(0.25, now);
-        gain2.gain.exponentialRampToValueAtTime(0.001, now + duration + 0.15);
+        gain2.gain.setValueAtTime(0.35, now);
+        gain2.gain.linearRampToValueAtTime(0.001, now + duration + 0.25);
+
+        gain3.gain.setValueAtTime(0.18, now);
+        gain3.gain.linearRampToValueAtTime(0.001, now + duration + 0.15);
 
         osc1.start(now);
         osc2.start(now);
-        osc1.stop(now + duration + 0.35);
-        osc2.stop(now + duration + 0.35);
-      } catch (e) {}
+        osc3.start(now);
+        osc1.stop(now + duration + 0.45);
+        osc2.stop(now + duration + 0.45);
+        osc3.stop(now + duration + 0.45);
+      } catch (e) {
+        console.warn("Music box tone error:", e);
+      }
     }
 
-    function playSound(type) {
+    async function playSound(type) {
       try {
-        if (!audioCtx) {
-          audioCtx = new AudioContext();
-        }
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+        await ensureAudioContext();
+        if (!audioCtx) return;
 
-        const now = audioCtx.currentTime;
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime + 0.005;
 
         if (type === 'tick') {
           // 통통 튀는 틱 소리
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
           osc.type = 'sine';
           osc.frequency.setValueAtTime(440, now);
-          osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+          osc.frequency.linearRampToValueAtTime(880, now + 0.08);
+
+          gain.gain.setValueAtTime(0.3, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.08);
+
           osc.start(now);
-          osc.stop(now + 0.08);
+          osc.stop(now + 0.09);
         } else if (type === 'fanfare') {
           // 팡파레 멜로디 (승리/스페셜)
           const notes = [523.25, 659.25, 783.99, 1046.50]; // C, E, G, High C
           notes.forEach((freq, idx) => {
+            const t = now + idx * 0.1;
             const o = audioCtx.createOscillator();
             const g = audioCtx.createGain();
             o.connect(g);
             g.connect(audioCtx.destination);
+
             o.type = 'triangle';
-            o.frequency.setValueAtTime(freq, now + idx * 0.1);
-            g.gain.setValueAtTime(0.25, now + idx * 0.1);
-            g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.1 + 0.25);
-            o.start(now + idx * 0.1);
-            o.stop(now + idx * 0.1 + 0.3);
+            o.frequency.setValueAtTime(freq, t);
+
+            g.gain.setValueAtTime(0.35, t);
+            g.gain.linearRampToValueAtTime(0.001, t + 0.25);
+
+            o.start(t);
+            o.stop(t + 0.28);
           });
         } else if (type === 'sad') {
           // 아쉬운 저음
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+
           osc.type = 'sawtooth';
-          osc.frequency.setValueAtTime(250, now);
-          osc.frequency.linearRampToValueAtTime(150, now + 0.3);
-          gain.gain.setValueAtTime(0.2, now);
-          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+          osc.frequency.setValueAtTime(260, now);
+          osc.frequency.linearRampToValueAtTime(140, now + 0.35);
+
+          gain.gain.setValueAtTime(0.25, now);
+          gain.gain.linearRampToValueAtTime(0.001, now + 0.35);
+
           osc.start(now);
-          osc.stop(now + 0.3);
+          osc.stop(now + 0.38);
         }
       } catch (e) {
         // AudioContext 차단 환경에서는 무음 처리
       }
     }
+
+    // 모바일 탭 복귀 시 BGM 자동 재개 처리
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isBgmPlaying && audioCtx) {
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+      }
+    });
 
     // -----------------------------------------------------------------
     // 5. 보드게임 선공 동전 던지기 로직
