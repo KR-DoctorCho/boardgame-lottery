@@ -1318,9 +1318,8 @@
     let audioCtx = null;
     let masterAudioGain = null;
 
-    // 모바일(iOS Safari/Android) 호환용 AudioContext 초기화 및 활성화
-    function ensureAudioContext() {
-      if (!audioCtx) {
+    function createAudioContext() {
+      if (!audioCtx || audioCtx.state === 'closed') {
         const AudioCtxClass = window.AudioContext || window.webkitAudioContext;
         if (AudioCtxClass) {
           audioCtx = new AudioCtxClass();
@@ -1329,26 +1328,69 @@
           masterAudioGain.connect(audioCtx.destination);
         }
       }
-      if (audioCtx && audioCtx.state === 'suspended') {
-        return audioCtx.resume();
+      return audioCtx;
+    }
+
+    // iOS WebKit은 resume()만 호출하는 것보다 사용자 탭 안에서 AudioNode를
+    // 즉시 start()해야 오디오 잠금이 안정적으로 해제된다.
+    function primeAudioContext() {
+      if (!audioCtx) return;
+      try {
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(masterAudioGain || audioCtx.destination);
+        source.start(0);
+      } catch (e) {}
+    }
+
+    // 모바일(iOS Safari/Chrome/Android) 호환용 AudioContext 초기화 및 활성화
+    function ensureAudioContext(primeFromGesture = false) {
+      // iOS에서 interrupted 상태가 고착되면 resume보다 새 컨텍스트가 안정적이다.
+      if (primeFromGesture && audioCtx && audioCtx.state === 'interrupted') {
+        const interruptedContext = audioCtx;
+        audioCtx = null;
+        masterAudioGain = null;
+        activeBgmOscillators.clear();
+        try { interruptedContext.close(); } catch (e) {}
       }
-      return Promise.resolve();
+
+      createAudioContext();
+      if (!audioCtx) return Promise.reject(new Error('Web Audio API is unavailable'));
+
+      if (primeFromGesture) {
+        // 반드시 resume를 기다리기 전에 실제 제스처 콜스택에서 실행한다.
+        primeAudioContext();
+      }
+
+      const resumePromise = audioCtx.state === 'running'
+        ? Promise.resolve()
+        : audioCtx.resume();
+
+      return resumePromise.then(() => {
+        if (primeFromGesture) primeAudioContext();
+        return audioCtx;
+      });
+    }
+
+    async function recoverAudioContext() {
+      if (!audioCtx || !isBgmPlaying) return;
+      try {
+        if (audioCtx.state === 'interrupted') {
+          await audioCtx.suspend().catch(() => {});
+        }
+        if (audioCtx.state !== 'running') {
+          await audioCtx.resume();
+        }
+      } catch (e) {
+        console.warn('AudioContext recovery failed:', e);
+      }
     }
 
     // 모바일 첫 터치/클릭 시 오디오 컨텍스트 자동 언락 (사일런트 버퍼 재생)
     const audioUnlockEvents = ['touchstart', 'touchend', 'pointerdown', 'click'];
     function unlockAudioOnFirstInteraction() {
-      ensureAudioContext().then(() => {
-        if (audioCtx) {
-          try {
-            const buffer = audioCtx.createBuffer(1, 1, 22050);
-            const source = audioCtx.createBufferSource();
-            source.buffer = buffer;
-            source.connect(audioCtx.destination);
-            source.start(0);
-          } catch (e) {}
-        }
-      }).catch(() => {});
+      ensureAudioContext(true).catch(() => {});
 
       audioUnlockEvents.forEach(evt => {
         document.removeEventListener(evt, unlockAudioOnFirstInteraction, true);
@@ -1375,20 +1417,18 @@
       if (isBgmPlaying) {
         stopBGM();
       } else {
-        // iOS는 실제 탭 이벤트 안에서 오디오 생성/재개가 시작되어야 한다.
-        ensureAudioContext().catch(() => {});
-        startBGM();
+        // Promise를 만들기 전에 실제 클릭 콜스택에서 오디오 노드를 시작한다.
+        const activationPromise = ensureAudioContext(true);
+        startBGM(activationPromise);
       }
     }
 
-    async function startBGM() {
+    async function startBGM(activationPromise = null) {
       if (isBgmPlaying || isStartingBgm) return;
       isStartingBgm = true;
       try {
-        await ensureAudioContext();
-        if (!audioCtx || audioCtx.state !== 'running') {
-          throw new Error('AudioContext could not be started');
-        }
+        await (activationPromise || ensureAudioContext());
+        if (!audioCtx || audioCtx.state === 'closed') throw new Error('AudioContext unavailable');
         isBgmPlaying = true;
         updateBgmBtnUI(true);
         showToast("🎵 생일 축하 오르골 BGM ON 💖");
@@ -1396,7 +1436,7 @@
       } catch (e) {
         isBgmPlaying = false;
         updateBgmBtnUI(false);
-        showToast("🔇 브라우저의 소리 재생 권한을 확인해주세요.");
+        showToast("🔇 무음 모드와 미디어 볼륨을 확인한 뒤 다시 눌러주세요.");
         console.warn("BGM start error:", e);
       } finally {
         isStartingBgm = false;
@@ -1583,9 +1623,7 @@
     // 모바일 탭 복귀 시 BGM 자동 재개 처리
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && isBgmPlaying && audioCtx) {
-        if (audioCtx.state === 'suspended') {
-          audioCtx.resume();
-        }
+        recoverAudioContext();
       }
     });
 
@@ -1886,7 +1924,7 @@
 
     function revealFinalBirthdayLetter() {
       // 버튼을 누르는 순간 오디오를 먼저 활성화해 iOS 자동재생 제한을 통과한다.
-      ensureAudioContext().catch(() => {});
+      const activationPromise = ensureAudioContext(true);
       closeConfirmModal2();
       setTimeout(() => {
         // 최종 편지 모달 오픈 & 화려한 폭죽 + 오르골 BGM
@@ -1897,7 +1935,7 @@
         playSound('fanfare');
 
         if (!isBgmPlaying) {
-          startBGM();
+          startBGM(activationPromise);
         }
       }, 150);
     }
